@@ -261,6 +261,7 @@
     "github.com/appleboy/gin-jwt",
     "github.com/docker/distribution/uuid",
     "github.com/gin-gonic/gin",
+    "github.com/google/uuid",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/jinzhu/gorm/dialects/sqlite",
