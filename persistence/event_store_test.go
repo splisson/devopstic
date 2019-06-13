@@ -1,21 +1,20 @@
 package persistence
 
 import (
-	"github.com/splisson/opstic/entities"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
+
 var (
 	testEventStore *EventStoreDB
-	testEvent = entities.Event{
-		Category: entities.EVENT_CATEGORY_DEPLOY,
-		Timestamp: time.Now(),
-		PipelineId:		"test_pipeline",
-		Status:			"success",
-		Commit:			"1234567890",
-		Environment:     "unit_test",
-	}
+	//testEvent = entities.Event{
+	//	Category: entities.EVENT_CATEGORY_DEPLOY,
+	//	Timestamp: time.Now(),
+	//	PipelineId:		"test_pipeline",
+	//	Status:			"success",
+	//	Commit:			"1234567890",
+	//	Environment:     "unit_test",
+	//}
 
 )
 

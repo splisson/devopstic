@@ -175,7 +175,7 @@ func TestPostEvents(t *testing.T) {
 		// Create a request to send to the above route
 
 		message := map[string]interface{}{
-			"category":    "build",
+			"category":    "incident",
 			"status":      "success",
 			"commit":      "123456910",
 			"pipeline_id": "api",

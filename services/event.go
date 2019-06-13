@@ -39,5 +39,15 @@ func (s *EventService) CreateEvent(event entities.Event) (*entities.Event, error
 			event.LeadTime = event.Timestamp.Unix() - buildEvent.Timestamp.Unix()
 		}
 	}
+	// Service recovery
+	if event.Category == entities.EVENT_CATEGORY_INCIDENT &&
+		event.Status == entities.EVENT_STATUS_SUCCESS {
+		failureEvent, err := s.eventStore.GetLatestFailureEventByPipelineIdAndEnvironment(event.PipelineId, event.Environment)
+		if err != nil {
+			log.Infof("no failure event for that IncidentId %v", err)
+		} else {
+			event.TimeToRestore = event.Timestamp.Unix() - failureEvent.Timestamp.Unix()
+		}
+	}
 	return s.eventStore.CreateEvent(event)
 }

@@ -24,6 +24,8 @@ func (e *EventHandlers) GetEvents(c *gin.Context) {
 }
 
 func eventRepresentationToEvent(eventRepresentation representations.Event) entities.Event {
+	//leadTime, _ := strconv.ParseInt(eventRepresentation.LeadTime, 10, 64)
+
 	event := entities.Event{
 		Category:    eventRepresentation.Category,
 		Timestamp:   eventRepresentation.Timestamp,

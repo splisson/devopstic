@@ -9,6 +9,7 @@ import (
 type EventStoreInterface interface {
 	GetEvents() ([]entities.Event, error)
 	GetEventByCommitAndCategory(commit string, category string) (*entities.Event, error)
+	GetLatestFailureEventByPipelineIdAndEnvironment(pipelineId string, environment string) (*entities.Event, error)
 	CreateEvent(event entities.Event) (*entities.Event, error)
 }
 
@@ -34,6 +35,14 @@ func (s *EventStoreDB) GetEventByCommitAndCategory(commit string, category strin
 	event := entities.Event{}
 	db := s.db.Table("events").Select("*").Where("commit = ? AND category = ?", commit, category)
 	db.Find(&event)
+	return &event, nil
+}
+func (s *EventStoreDB) GetLatestFailureEventByPipelineIdAndEnvironment(pipelineId string, environment string) (*entities.Event, error) {
+	event := entities.Event{}
+	db := s.db.Table("events").Select("*").
+		Where("category= ? AND pipeline_id = ? AND environment = ?", entities.EVENT_CATEGORY_INCIDENT, pipelineId, environment).
+		Order("timestamp DESC")
+	db.First(&event)
 	return &event, nil
 }
 
