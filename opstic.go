@@ -30,6 +30,7 @@ func BuildEngine(eventHandlers *handlers.EventHandlers) *gin.Engine {
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
 		auth.POST("/events", eventHandlers.PostEvents)
+		auth.POST("/webhook/:token/events", eventHandlers.PostEvents)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 		auth.GET("/hello", handlers.HelloHandler)
 	}

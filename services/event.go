@@ -30,9 +30,9 @@ func (s *EventService) GetEvents() ([]entities.Event, error) {
 }
 
 func (s *EventService) CreateEvent(event entities.Event) (*entities.Event, error) {
-	if  event.Category == entities.EVENT_CATEGORY_DEPLOY &&
-		event.Status == "success" {
-		buildEvent, err := s.eventStore.GetEventByCommitAndCategory(event.Commit, "build")
+	if event.Category == entities.EVENT_CATEGORY_DEPLOY &&
+		event.Status == entities.EVENT_STATUS_SUCCESS {
+		buildEvent, err := s.eventStore.GetEventByCommitAndCategory(event.Commit, entities.EVENT_CATEGORY_BUILD)
 		if err != nil {
 			log.Infof("no build event for that commit %v", err)
 		} else {
