@@ -5,15 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/splisson/opstic/entities"
+	"github.com/splisson/opstic/handlers"
+	"github.com/splisson/opstic/persistence"
+	"github.com/splisson/opstic/services"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
-	r *gin.Engine
+	r     *gin.Engine
 	token string
 )
 
@@ -31,11 +36,10 @@ func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *
 	}
 }
 
-
-func Login() string {
+func Login() (string, error) {
 	message := map[string]interface{}{
 		"username": "admin",
-		"password":  "w3yv",
+		"password": "w3yv",
 	}
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
@@ -50,10 +54,13 @@ func Login() string {
 	// Create the service and process the above request.
 	r.ServeHTTP(w, req)
 
-	json.NewDecoder(w.Body).Decode(&result)
+	err := json.NewDecoder(w.Body).Decode(&result)
+	if err != nil {
+		return "", err
+	}
 
 	token := fmt.Sprintf("%v", result["token"])
-	return token
+	return token, nil
 }
 
 func authenticate(req *http.Request) {
@@ -61,8 +68,17 @@ func authenticate(req *http.Request) {
 }
 
 func TestMain(m *testing.M) {
-	r = BuildEngine()
-	token = Login()
+	db := persistence.NewPostgresqlConnectionLocalhost()
+	db.AutoMigrate(&entities.Event{})
+	eventStore := persistence.NewEventDBStore(db)
+	eventService := services.NewEventService(eventStore)
+	eventHandlers := handlers.NewEventHandlers(eventService)
+	r = BuildEngine(eventHandlers)
+	var err error
+	token, err = Login()
+	if err != nil {
+		panic(err)
+	}
 	m.Run()
 }
 
@@ -104,18 +120,30 @@ func TestPostEvents(t *testing.T) {
 			return statusOK
 		})
 
-		req, _ = http.NewRequest("POST", "/events", nil)
+		message := map[string]interface{}{
+			"category":    "deploy",
+			"status":      "success",
+			"commit":      "123456",
+			"pipeline_id": "api",
+			"environment": "dev",
+			"timestamp":   time.Now().Format(time.RFC3339),
+		}
+		bytesRepresentation, _ := json.Marshal(message)
+		body := bytes.NewBuffer(bytesRepresentation)
+		req, _ = http.NewRequest("POST", "/events", body)
 		req.Header.Set("Content-Type", "application/json")
 		authenticate(req)
+
 		testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 			// Test that the http status code is 200
 			statusOK := w.Code == http.StatusOK
 
-			p, err := ioutil.ReadAll(w.Body)
-			pageOK := err == nil && strings.Index(string(p), "created") > 0
+			//p, err := ioutil.ReadAll(w.Body)
+			var result entities.Event //map[string]interface{}
+			err := json.NewDecoder(w.Body).Decode(&result)
+			pageOK := err == nil && result.CreatedAt.String() != ""
 
 			return statusOK && pageOK
 		})
 	})
 }
-

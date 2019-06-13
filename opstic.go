@@ -6,7 +6,7 @@ import (
 	"github.com/splisson/opstic/middleware"
 )
 
-func BuildEngine() *gin.Engine {
+func BuildEngine(eventHandlers *handlers.EventHandlers) *gin.Engine {
 
 	r := gin.New()
 
@@ -24,12 +24,12 @@ func BuildEngine() *gin.Engine {
 
 	r.POST("/login", authMiddleware.LoginHandler)
 
-	r.GET("/events", handlers.GetEvents)
+	r.GET("/events", eventHandlers.GetEvents)
 
 	auth := r.Group("/")
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
-		auth.POST("/events", handlers.PostEvents)
+		auth.POST("/events", eventHandlers.PostEvents)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 		auth.GET("/hello", handlers.HelloHandler)
 	}

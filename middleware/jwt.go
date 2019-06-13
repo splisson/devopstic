@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/splisson/opstic/entities"
 	"github.com/splisson/opstic/representations"
+	"log"
 	"time"
 )
 
@@ -32,7 +33,7 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			userID := loginVals.Username
 			password := loginVals.Password
 			// TODO: Use database
-			if (userID == "admin" && password == "w3yv") {
+			if userID == "admin" && password == "w3yv" {
 				return &entities.User{
 					Username:  userID,
 					LastName:  "Weyv",
@@ -70,9 +71,13 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 		TokenHeadName: "Bearer",
 
 		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
-		TimeFunc: time.Now,
+		TimeFunc:         time.Now,
 		SigningAlgorithm: "HS256",
+		IdentityKey:      IdentityKey,
 	}
-
+	authMiddleware, err := jwt.New(authMiddleware)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return authMiddleware
 }
