@@ -46,16 +46,17 @@ func TestCreateEventWithLeadTime(t *testing.T) {
 
 	t.Run("success deploy should not fill lead time if there is not a build for that commit", func(t *testing.T) {
 		newEvent := testEvent
+		commit := fmt.Sprintf("different%s", uuid.New().String())
 		newEvent.Category = entities.EVENT_CATEGORY_BUILD
 		newEvent.Status = "success"
-		newEvent.Commit = "different"
+		newEvent.Commit = commit
 		newEvent.Timestamp = time.Now().Add(-5 * time.Minute)
 		event, err := eventService.CreateEvent(newEvent)
 		assert.Nil(t, err, "no error")
 		newEvent = testEvent
 		newEvent.Category = entities.EVENT_CATEGORY_DEPLOY
 		newEvent.Status = "success"
-		newEvent.Commit = "same"
+		newEvent.Commit = fmt.Sprintf("same%s", uuid.New().String())
 		newEvent.Timestamp = time.Now()
 		event, err = eventService.CreateEvent(newEvent)
 		assert.Nil(t, err, "no error")

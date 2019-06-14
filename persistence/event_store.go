@@ -27,23 +27,23 @@ func NewEventDBStore(db *gorm.DB) *EventStoreDB {
 func (s *EventStoreDB) GetEvents() ([]entities.Event, error) {
 	events := []entities.Event{}
 	db := s.db.Table("events").Select("*")
-	db.Find(&events)
-	return events, nil
+	db = db.Find(&events)
+	return events, db.Error
 }
 
 func (s *EventStoreDB) GetEventByCommitAndCategory(commit string, category string) (*entities.Event, error) {
 	event := entities.Event{}
 	db := s.db.Table("events").Select("*").Where("commit = ? AND category = ?", commit, category)
-	db.Find(&event)
-	return &event, nil
+	db = db.Find(&event)
+	return &event, db.Error
 }
 func (s *EventStoreDB) GetLatestFailureEventByPipelineIdAndEnvironment(pipelineId string, environment string) (*entities.Event, error) {
 	event := entities.Event{}
 	db := s.db.Table("events").Select("*").
 		Where("category= ? AND pipeline_id = ? AND environment = ?", entities.EVENT_CATEGORY_INCIDENT, pipelineId, environment).
 		Order("timestamp DESC")
-	db.First(&event)
-	return &event, nil
+	db = db.First(&event)
+	return &event, db.Error
 }
 
 func (s *EventStoreDB) CreateEvent(event entities.Event) (*entities.Event, error) {
