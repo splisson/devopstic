@@ -5,6 +5,7 @@ import (
 	"github.com/splisson/opstic/entities"
 	"github.com/splisson/opstic/representations"
 	"github.com/splisson/opstic/services"
+	"time"
 )
 
 type EventHandlers struct {
@@ -25,10 +26,10 @@ func (e *EventHandlers) GetEvents(c *gin.Context) {
 
 func eventRepresentationToEvent(eventRepresentation representations.Event) entities.Event {
 	//leadTime, _ := strconv.ParseInt(eventRepresentation.LeadTime, 10, 64)
-
+	timestamp := time.Unix(eventRepresentation.Timestamp, 0)
 	event := entities.Event{
 		Category:    eventRepresentation.Category,
-		Timestamp:   eventRepresentation.Timestamp,
+		Timestamp:   timestamp,
 		PipelineId:  eventRepresentation.PipelineId,
 		Status:      eventRepresentation.Status,
 		Commit:      eventRepresentation.Commit,

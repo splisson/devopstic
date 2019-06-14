@@ -128,7 +128,7 @@ func TestPostEvents(t *testing.T) {
 			"commit":      "123456",
 			"pipeline_id": "api",
 			"environment": "dev",
-			"timestamp":   time.Now().Format(time.RFC3339),
+			"timestamp":   time.Now(), //.Format(time.RFC3339),
 		}
 		bytesRepresentation, _ := json.Marshal(message)
 		body := bytes.NewBuffer(bytesRepresentation)
@@ -161,12 +161,12 @@ func TestPostEvents(t *testing.T) {
 			"commit":      "123456",
 			"pipeline_id": "api",
 			"environment": "dev",
-			"timestamp":   time.Now().Add(mult * time.Minute).Format(time.RFC3339),
+			"timestamp":   time.Now().Add(mult * time.Minute).Unix(), //.Format(time.RFC3339),
 		}
 		message["commit"] = uuid.New().String()
 		postEvent(t, "header", message)
 		message["category"] = "deploy"
-		message["timestamp"] = time.Now().Format(time.RFC3339)
+		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
 		postEvent(t, "header", message)
 	})
 
@@ -182,7 +182,7 @@ func TestPostEvents(t *testing.T) {
 			"commit":      "123456910",
 			"pipeline_id": "api",
 			"environment": "dev",
-			"timestamp":   time.Now().Add(mult * time.Minute).Format(time.RFC3339),
+			"timestamp":   time.Now().Add(mult * time.Minute).Unix(), //Format(time.RFC3339),
 		}
 
 		postEvent(t, "webhook", message)

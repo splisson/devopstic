@@ -15,7 +15,7 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 	authMiddleware := &jwt.GinJWTMiddleware{
 		Realm:      "opstic",
 		Key:        []byte("sa76duh387dfsihuasdf897ui398dfsuio"),
-		Timeout:    time.Hour,
+		Timeout:    365 * 24 * time.Hour,
 		MaxRefresh: time.Hour,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*entities.User); ok {
