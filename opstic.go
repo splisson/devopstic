@@ -22,6 +22,9 @@ func BuildEngine(eventHandlers *handlers.EventHandlers) *gin.Engine {
 	// the jwt middleware
 	authMiddleware := middleware.NewAuthMiddleware()
 
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{})
+	})
 	r.POST("/login", authMiddleware.LoginHandler)
 
 	auth := r.Group("/")
