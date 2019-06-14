@@ -40,12 +40,12 @@ func eventRepresentationToEvent(eventRepresentation representations.Event) entit
 func (e *EventHandlers) PostEvents(c *gin.Context) {
 	var newEvent entities.Event
 
-	var newEventVals representations.Event
-	if err := c.Bind(&newEventVals); err != nil {
+	var newEventValues representations.Event
+	if err := c.Bind(&newEventValues); err != nil {
 		c.JSON(400, gin.H{"error": err})
 	}
 	//err := json.Unmarshal(bodyBytes, newEvent)
-	newEvent = eventRepresentationToEvent(newEventVals)
+	newEvent = eventRepresentationToEvent(newEventValues)
 	event, err := e.eventService.CreateEvent(newEvent)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err})

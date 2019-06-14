@@ -149,10 +149,12 @@ func TestPostEvents(t *testing.T) {
 		})
 	})
 
+	rand.Seed(time.Now().UnixNano())
+	random := rand.Intn(10)
+	mult := time.Duration(-5 * random)
+
 	t.Run("Post events", func(t *testing.T) {
-		rand.Seed(time.Now().UnixNano())
-		random := rand.Intn(10)
-		mult := time.Duration(-5 * random)
+
 		message := map[string]interface{}{
 			"category":    "build",
 			"status":      "success",
@@ -162,10 +164,10 @@ func TestPostEvents(t *testing.T) {
 			"timestamp":   time.Now().Add(mult * time.Minute).Format(time.RFC3339),
 		}
 		message["commit"] = uuid.New().String()
-		postEvent(t, message)
+		postEvent(t, "header", message)
 		message["category"] = "deploy"
 		message["timestamp"] = time.Now().Format(time.RFC3339)
-		postEvent(t, message)
+		postEvent(t, "header", message)
 	})
 
 	t.Run("Post event via webhook", func(t *testing.T) {
@@ -176,38 +178,51 @@ func TestPostEvents(t *testing.T) {
 
 		message := map[string]interface{}{
 			"category":    "incident",
-			"status":      "success",
+			"status":      "failure",
 			"commit":      "123456910",
 			"pipeline_id": "api",
 			"environment": "dev",
-			"timestamp":   time.Now().Format(time.RFC3339),
+			"timestamp":   time.Now().Add(mult * time.Minute).Format(time.RFC3339),
 		}
-		bytesRepresentation, _ := json.Marshal(message)
-		body := bytes.NewBuffer(bytesRepresentation)
-		req, _ := http.NewRequest("POST", fmt.Sprintf("/webhook/%s/events", token), body)
-		req.Header.Set("Content-Type", "application/json")
 
-		testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-			// Test that the http status code is 200
-			statusOK := w.Code == http.StatusOK
+		postEvent(t, "webhook", message)
+		message["status"] = "success"
+		message["timestamp"] = time.Now().Format(time.RFC3339)
+		postEvent(t, "webhook", message)
 
-			//p, err := ioutil.ReadAll(w.Body)
-			var result entities.Event //map[string]interface{}
-			err := json.NewDecoder(w.Body).Decode(&result)
-			pageOK := err == nil && result.CreatedAt.String() != ""
-
-			return statusOK && pageOK
-		})
+		//bytesRepresentation, _ := json.Marshal(message)
+		//body := bytes.NewBuffer(bytesRepresentation)
+		//req, _ := http.NewRequest("POST", fmt.Sprintf("/webhook/%s/events", token), body)
+		//req.Header.Set("Content-Type", "application/json")
+		//
+		//testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+		//	// Test that the http status code is 200
+		//	statusOK := w.Code == http.StatusOK
+		//
+		//	//p, err := ioutil.ReadAll(w.Body)
+		//	var result entities.Event //map[string]interface{}
+		//	err := json.NewDecoder(w.Body).Decode(&result)
+		//	pageOK := err == nil && result.CreatedAt.String() != ""
+		//
+		//	return statusOK && pageOK
+		//})
 	})
 }
 
-func postEvent(t *testing.T, message map[string]interface{}) {
+func postEvent(t *testing.T, authMethod string, message map[string]interface{}) {
 
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
-	req, _ := http.NewRequest("POST", "/events", body)
+
+	var req *http.Request
+
+	if authMethod == "webhook" {
+		req, _ = http.NewRequest("POST", fmt.Sprintf("/webhook/%s/events", token), body)
+	} else {
+		req, _ = http.NewRequest("POST", "/events", body)
+		authenticate(req)
+	}
 	req.Header.Set("Content-Type", "application/json")
-	authenticate(req)
 
 	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		// Test that the http status code is 200
