@@ -3,25 +3,19 @@ package persistence
 import (
 	"fmt"
 	"github.com/docker/distribution/uuid"
-	"github.com/jinzhu/gorm"
-	"github.com/splisson/opstic/entities"
+	"github.com/splisson/devopstic/entities"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 var (
-  db            *gorm.DB
-  dbFilepath    string
-  testUserStore *UserDBStore
-  testUser       = entities.User{
-  	Username: "test",
-  	Email: "user@test.com",
-  	FirstName: "testFirst",
-  	LastName: "testLast",
-  }
+	testUser = entities.User{
+		Username:  "test",
+		Email:     "user@test.com",
+		FirstName: "testFirst",
+		LastName:  "testLast",
+	}
 )
-
-
 
 func TestCreateGetUser(t *testing.T) {
 	username := fmt.Sprintf("testGet%s", uuid.Generate().String())
@@ -34,7 +28,7 @@ func TestCreateGetUser(t *testing.T) {
 		assert.NotNil(t, user.ID, "id should not be nil")
 		assert.NotEmpty(t, user.ID, "id should not be empty")
 		user, err = testUserStore.GetUserByUsername(user.Username)
-		assert.Nil(t,err, "no error")
+		assert.Nil(t, err, "no error")
 		assert.NotNil(t, user, "user exists")
 		assert.Equal(t, newUser.Username, user.Username, "same username")
 	})

@@ -1,18 +1,19 @@
 package main
 
 import (
-	"github.com/splisson/opstic"
-	"github.com/splisson/opstic/handlers"
-	"github.com/splisson/opstic/persistence"
-	"github.com/splisson/opstic/services"
+	"github.com/splisson/devopstic"
+	"github.com/splisson/devopstic/handlers"
+	"github.com/splisson/devopstic/persistence"
+	"github.com/splisson/devopstic/services"
 )
 
 func main() {
 	db := persistence.NewPostgresqlConnectionWithEnv()
-	eventStore := persistence.NewEventDBStore(db)
-	eventService := services.NewEventService(eventStore)
-	eventHandlers := handlers.NewEventHandlers(eventService)
-	r := opstic.BuildEngine(eventHandlers)
+	commitStore := persistence.NewCommitStoreDB(db)
+	deploymentStore := persistence.NewDeploymentDBStore(db)
+	commitService := services.NewCommitService(commitStore, deploymentStore)
+	commitHandlers := handlers.NewCommitHandlers(commitService)
+	r := devopstic.BuildEngine(commitHandlers)
 	//fmt.Printf("Starting opstic server\n")
 	err := r.Run()
 	if err != nil {

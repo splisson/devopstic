@@ -1,13 +1,12 @@
 package services
 
 import (
-	"github.com/splisson/opstic/persistence"
-	"github.com/splisson/opstic/entities"
+	"github.com/splisson/devopstic/entities"
+	"github.com/splisson/devopstic/persistence"
 )
 
 type UserServiceInterface interface {
 	GetUserByUsername(username string) (*entities.User, error)
-
 }
 
 type UserService struct {
@@ -23,5 +22,3 @@ func NewUserService(userStore persistence.UserStoreInterface) *UserService {
 func (s *UserService) GetUserByUsername(username string) (*entities.User, error) {
 	return nil, nil
 }
-
-

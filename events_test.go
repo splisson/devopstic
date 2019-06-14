@@ -1,4 +1,4 @@
-package opstic
+package devopstic
 
 import (
 	"bytes"
@@ -6,16 +6,15 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/splisson/opstic/entities"
-	"github.com/splisson/opstic/handlers"
-	"github.com/splisson/opstic/persistence"
-	"github.com/splisson/opstic/services"
+	"github.com/splisson/devopstic/entities"
+	"github.com/splisson/devopstic/handlers"
+	"github.com/splisson/devopstic/persistence"
+	"github.com/splisson/devopstic/representations"
+	"github.com/splisson/devopstic/services"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 )
@@ -42,7 +41,7 @@ func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *
 func Login() (string, error) {
 	message := map[string]interface{}{
 		"username": "admin",
-		"password": "w3yv",
+		"password": "admin",
 	}
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
@@ -72,11 +71,12 @@ func authenticate(req *http.Request) {
 
 func TestMain(m *testing.M) {
 	db := persistence.NewPostgresqlConnectionLocalhost()
-	db.AutoMigrate(&entities.Event{})
-	eventStore := persistence.NewEventDBStore(db)
-	eventService := services.NewEventService(eventStore)
-	eventHandlers := handlers.NewEventHandlers(eventService)
-	r = BuildEngine(eventHandlers)
+	db.AutoMigrate(&entities.Deployment{})
+	commitStore := persistence.NewCommitStoreDB(db)
+	deploymentStore := persistence.NewDeploymentDBStore(db)
+	commitService := services.NewCommitService(commitStore, deploymentStore)
+	commitHandlers := handlers.NewCommitHandlers(commitService)
+	r = BuildEngine(commitHandlers)
 	var err error
 	token, err = Login()
 	if err != nil {
@@ -91,16 +91,17 @@ func TestGetEvents(t *testing.T) {
 
 		// Create a request to send to the above route
 		req, _ := http.NewRequest("GET", "/events", nil)
+		authenticate(req)
 
 		testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 			// Test that the http status code is 200
 			statusOK := w.Code == http.StatusOK
-
-			// Test that the page title is "Home Page"
-			// You can carry out a lot more detailed tests using libraries that can
-			// parse and process HTML pages
-			p, err := ioutil.ReadAll(w.Body)
-			pageOK := err == nil && strings.Index(string(p), "events") > 0
+			var pageOK bool
+			if statusOK {
+				var payload representations.CommitResults
+				err := json.NewDecoder(w.Body).Decode(&payload)
+				pageOK = err == nil && payload.Items != nil
+			}
 
 			return statusOK && pageOK
 		})
@@ -124,12 +125,12 @@ func TestPostEvents(t *testing.T) {
 		})
 
 		message := map[string]interface{}{
-			"category":    "deploy",
-			"status":      "success",
-			"commit":      uuid.New().String(),
-			"pipeline_id": "api",
+			"type":        entities.COMMIT_EVENT_COMMIT,
+			"status":      entities.STATUS_SUCCESS,
+			"commit_id":   uuid.New().String(),
+			"pipeline_id": fmt.Sprintf("api_%s", uuid.New().String()),
 			"environment": "dev",
-			"timestamp":   time.Now(), //.Format(time.RFC3339),
+			"timestamp":   time.Now().Unix(),
 		}
 		bytesRepresentation, _ := json.Marshal(message)
 		body := bytes.NewBuffer(bytesRepresentation)
@@ -140,11 +141,12 @@ func TestPostEvents(t *testing.T) {
 		testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 			// Test that the http status code is 200
 			statusOK := w.Code == http.StatusOK
-
-			//p, err := ioutil.ReadAll(w.Body)
-			var result entities.Event //map[string]interface{}
-			err := json.NewDecoder(w.Body).Decode(&result)
-			pageOK := err == nil && result.CreatedAt.String() != ""
+			var pageOK bool
+			if statusOK {
+				var result representations.Commit
+				err := json.NewDecoder(w.Body).Decode(&result)
+				pageOK = err == nil && result.Id != ""
+			}
 
 			return statusOK && pageOK
 		})
@@ -154,31 +156,30 @@ func TestPostEvents(t *testing.T) {
 	random := rand.Intn(10)
 	mult := time.Duration(-5 * random)
 
-	t.Run("Post events build and deploy", func(t *testing.T) {
+	t.Run("Post event committed and deploy", func(t *testing.T) {
 
 		message := map[string]interface{}{
-			"category":    "build",
-			"status":      "success",
-			"commit":      "123456",
-			"pipeline_id": "api",
+			"type":        entities.COMMIT_EVENT_COMMIT,
+			"status":      entities.STATUS_SUCCESS,
+			"commit_id":   uuid.New().String(),
+			"pipeline_id": fmt.Sprintf("api_%s", uuid.New().String()),
 			"environment": "dev",
 			"timestamp":   time.Now().Add(mult * time.Minute).Unix(), //.Format(time.RFC3339),
 		}
-		message["commit"] = uuid.New().String()
+		message["commit_id"] = uuid.New().String()
 		postEvent(t, "header", message)
-		message["commit"] = uuid.New().String()
-		message["category"] = "deploy"
+		message["type"] = "approve"
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
-		deployEvent := postEvent(t, "header", message)
-		assert.True(t, deployEvent.LeadTime == 0, "no lead time for different commits")
-		message["commit"] = uuid.New().String()
-		message["category"] = "build"
+		commit := postEvent(t, "header", message)
+		assert.True(t, commit.ApprovalTime > 0, "approval time > 0")
+		message["commit_id"] = uuid.New().String()
+		message["type"] = "commit"
 		message["timestamp"] = time.Now().Add(mult * time.Minute).Unix()
 		postEvent(t, "header", message)
-		message["category"] = "deploy"
+		message["type"] = "deploy"
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
-		deployEvent = postEvent(t, "header", message)
-		assert.True(t, deployEvent.LeadTime > 0, "lead time for same commits")
+		commit = postEvent(t, "header", message)
+		assert.True(t, commit.TotalLeadTime > 0, "lead time > 0")
 	})
 
 	t.Run("Post event via webhook", func(t *testing.T) {
@@ -190,15 +191,15 @@ func TestPostEvents(t *testing.T) {
 		message := map[string]interface{}{
 			"category":    "incident",
 			"status":      "failure",
-			"commit":      "123456910",
+			"commit_id":   "123456910",
 			"pipeline_id": "api",
 			"environment": "dev",
-			"timestamp":   time.Now().Add(mult * time.Minute).Unix(), //Format(time.RFC3339),
+			"timestamp":   time.Now().Add(mult * time.Minute).Unix(),
 		}
 
 		postEvent(t, "webhook", message)
 		message["status"] = "success"
-		message["timestamp"] = time.Now().Format(time.RFC3339)
+		message["timestamp"] = time.Now().Unix()
 		postEvent(t, "webhook", message)
 
 		//bytesRepresentation, _ := json.Marshal(message)
@@ -211,7 +212,7 @@ func TestPostEvents(t *testing.T) {
 		//	statusOK := w.Code == http.StatusOK
 		//
 		//	//p, err := ioutil.ReadAll(w.Body)
-		//	var result entities.Event //map[string]interface{}
+		//	var result entities.Deployment //map[string]interface{}
 		//	err := json.NewDecoder(w.Body).Decode(&result)
 		//	pageOK := err == nil && result.CreatedAt.String() != ""
 		//
@@ -220,7 +221,7 @@ func TestPostEvents(t *testing.T) {
 	})
 }
 
-func postEvent(t *testing.T, authMethod string, message map[string]interface{}) entities.Event {
+func postEvent(t *testing.T, authMethod string, message map[string]interface{}) representations.Commit {
 
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
@@ -234,7 +235,7 @@ func postEvent(t *testing.T, authMethod string, message map[string]interface{}) 
 		authenticate(req)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	var result entities.Event
+	var result representations.Commit
 
 	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		// Test that the http status code is 200
@@ -243,7 +244,7 @@ func postEvent(t *testing.T, authMethod string, message map[string]interface{}) 
 		//p, err := ioutil.ReadAll(w.Body)
 		//map[string]interface{}
 		err := json.NewDecoder(w.Body).Decode(&result)
-		pageOK := err == nil && result.CreatedAt.String() != ""
+		pageOK := err == nil && result.Id != ""
 
 		return statusOK && pageOK
 	})

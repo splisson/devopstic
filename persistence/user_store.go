@@ -3,7 +3,7 @@ package persistence
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/pborman/uuid"
-	"github.com/splisson/opstic/entities"
+	"github.com/splisson/devopstic/entities"
 )
 
 type UserStoreInterface interface {

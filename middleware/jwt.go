@@ -3,9 +3,10 @@ package middleware
 import (
 	"github.com/appleboy/gin-jwt"
 	"github.com/gin-gonic/gin"
-	"github.com/splisson/opstic/entities"
-	"github.com/splisson/opstic/representations"
+	"github.com/splisson/devopstic/entities"
+	"github.com/splisson/devopstic/representations"
 	"log"
+	"os"
 	"time"
 )
 
@@ -26,17 +27,25 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			return jwt.MapClaims{}
 		},
 		Authenticator: func(c *gin.Context) (interface{}, error) {
-			var loginVals representations.Login
-			if err := c.Bind(&loginVals); err != nil {
+			var loginValues representations.Login
+			if err := c.Bind(&loginValues); err != nil {
 				return "", jwt.ErrMissingLoginValues
 			}
-			userID := loginVals.Username
-			password := loginVals.Password
-			// TODO: Use database
-			if userID == "admin" && password == "w3yv" {
+			username := loginValues.Username
+			password := loginValues.Password
+			// TODO: Use database?
+			adminUsername := "admin"
+			if os.Getenv("DEVOPSTIC_USERNAME") != "" {
+				adminUsername = os.Getenv("DEVOPSTIC_USERNAME")
+			}
+			adminPassword := "admin"
+			if os.Getenv("DEVOPSTIC_PASSWORD") != "" {
+				adminPassword = os.Getenv("DEVOPSTIC_PASSWORD")
+			}
+			if username == adminUsername && password == adminPassword {
 				return &entities.User{
-					Username:  userID,
-					LastName:  "Weyv",
+					Username:  username,
+					LastName:  "Devopstic",
 					FirstName: "Admin",
 				}, nil
 			}

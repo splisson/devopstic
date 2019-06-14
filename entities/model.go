@@ -8,3 +8,8 @@ type Model struct {
 	UpdatedAt time.Time
 	DeletedAt *time.Time
 }
+
+const (
+	STATUS_SUCCESS = "success"
+	STATUS_FAILURE = "failure"
+)

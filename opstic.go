@@ -1,12 +1,12 @@
-package opstic
+package devopstic
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/splisson/opstic/handlers"
-	"github.com/splisson/opstic/middleware"
+	"github.com/splisson/devopstic/handlers"
+	"github.com/splisson/devopstic/middleware"
 )
 
-func BuildEngine(eventHandlers *handlers.EventHandlers) *gin.Engine {
+func BuildEngine(commitHandlers *handlers.CommitHandlers) *gin.Engine {
 
 	r := gin.New()
 
@@ -30,11 +30,10 @@ func BuildEngine(eventHandlers *handlers.EventHandlers) *gin.Engine {
 	auth := r.Group("/")
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
-		auth.GET("/events", eventHandlers.GetEvents)
-		auth.POST("/events", eventHandlers.PostEvents)
-		auth.POST("/webhook/:token/events", eventHandlers.PostEvents)
+		auth.GET("/events", commitHandlers.GetCommits)
+		auth.POST("/events", commitHandlers.PostCommitEvent)
+		auth.POST("/webhook/:token/events", commitHandlers.PostCommitEvent)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
-		auth.GET("/hello", handlers.HelloHandler)
 	}
 
 	return r

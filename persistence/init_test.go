@@ -7,6 +7,16 @@ import (
 	"testing"
 )
 
+var (
+	db         *gorm.DB
+	dbFilepath string
+
+	testDeploymentStore *DeploymentStoreDB
+	testCommitStore     *CommitStoreDB
+	testIncidentStore   *IncidentStoreDB
+	testUserStore       *UserDBStore
+)
+
 func initTestDB(m *testing.M) (*gorm.DB, string) {
 	dbId := uuid.Generate().String()
 	db, dbFilepath := NewSQLiteConnection(dbId)
@@ -20,7 +30,9 @@ func cleanupTestDB(dbFilepath string) {
 func TestMain(m *testing.M) {
 	db, dbFilepath = initTestDB(m)
 	testUserStore = NewUserDBStore(db)
-	testEventStore = NewEventDBStore(db)
+	testDeploymentStore = NewDeploymentDBStore(db)
+	testCommitStore = NewCommitStoreDB(db)
+	testIncidentStore = NewIncidentDBStore(db)
 	CreateTables(db)
 	m.Run()
 	cleanupTestDB(dbFilepath)
