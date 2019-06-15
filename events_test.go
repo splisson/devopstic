@@ -180,14 +180,25 @@ func TestPostEvents(t *testing.T) {
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
 		commit = postEvent(t, "header", message)
 		assert.True(t, commit.TotalLeadTime > 0, "lead time > 0")
+		message["commit_id"] = uuid.New().String()
+		message["type"] = "commit"
+		message["timestamp"] = time.Now().Add(2 * mult * time.Minute).Unix()
+		postEvent(t, "header", message)
+		message["type"] = "deploy"
+		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
+		commit = postEvent(t, "header", message)
+		assert.True(t, commit.TotalLeadTime > 0, "lead time > 0")
+		message["commit_id"] = uuid.New().String()
+		message["type"] = "commit"
+		message["timestamp"] = time.Now().Add(2 * mult * time.Minute).Unix()
+		postEvent(t, "header", message)
+		message["type"] = "deploy"
+		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
+		commit = postEvent(t, "header", message)
+		assert.True(t, commit.TotalLeadTime > 0, "lead time > 0")
 	})
 
 	t.Run("Post event via webhook", func(t *testing.T) {
-
-		//r := BuildEngine()
-
-		// Create a request to send to the above route
-
 		message := map[string]interface{}{
 			"category":    "incident",
 			"status":      "failure",
@@ -201,23 +212,6 @@ func TestPostEvents(t *testing.T) {
 		message["status"] = "success"
 		message["timestamp"] = time.Now().Unix()
 		postEvent(t, "webhook", message)
-
-		//bytesRepresentation, _ := json.Marshal(message)
-		//body := bytes.NewBuffer(bytesRepresentation)
-		//req, _ := http.NewRequest("POST", fmt.Sprintf("/webhook/%s/events", token), body)
-		//req.Header.Set("Content-Type", "application/json")
-		//
-		//testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
-		//	// Test that the http status code is 200
-		//	statusOK := w.Code == http.StatusOK
-		//
-		//	//p, err := ioutil.ReadAll(w.Body)
-		//	var result entities.Deployment //map[string]interface{}
-		//	err := json.NewDecoder(w.Body).Decode(&result)
-		//	pageOK := err == nil && result.CreatedAt.String() != ""
-		//
-		//	return statusOK && pageOK
-		//})
 	})
 }
 

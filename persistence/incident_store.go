@@ -83,7 +83,7 @@ func (s *IncidentStoreDB) UpdateIncident(incident entities.Incident) (*entities.
 		return nil, err
 	}
 
-	if err := tx.Update(&incident).Error; err != nil {
+	if err := tx.Save(&incident).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}

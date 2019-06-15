@@ -76,10 +76,6 @@ func (s *CommitStoreDB) UpdateCommit(commit entities.Commit) (*entities.Commit, 
 		tx.Rollback()
 		return nil, err
 	}
-	//if err := tx.Update(&commit).Error; err != nil {
-	//	tx.Rollback()
-	//	return nil, err
-	//}
 
 	return &commit, tx.Commit().Error
 }

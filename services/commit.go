@@ -82,7 +82,8 @@ func (s *CommitService) UpdateCommitByEvent(commitEvent entities.CommitEvent) (*
 				Environment: commitEvent.Environment,
 			}
 			if commitEvent.Status == entities.STATUS_SUCCESS {
-				if commit.State == entities.COMMIT_STATE_SUBMITTED {
+				if commit.State == entities.COMMIT_STATE_COMMITTED ||
+					commit.State == entities.COMMIT_STATE_SUBMITTED {
 					// Bypass submission and approval as if they happened at creation time of the commit
 					commit.SubmitTime = commit.CommitTime
 					commit.ApprovalTime = commit.CommitTime
