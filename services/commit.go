@@ -7,9 +7,10 @@ import (
 )
 
 type CommitServiceInterface interface {
-	HandleEvent(event entities.Event) error
+	HandleEvent(event entities.Event) (*entities.Commit, error)
 	CreateCommit(event entities.Commit) (*entities.Commit, error)
 	GetCommits() ([]entities.Commit, error)
+	GetCommitByPipelineIdAndCommitId(pipelineId string, commitId string) (*entities.Commit, error)
 	UpdateCommitByEvent(event entities.Event) (*entities.Commit, error)
 }
 
@@ -44,6 +45,10 @@ func (s *CommitService) GetCommits() ([]entities.Commit, error) {
 	return s.commitStore.GetCommits()
 }
 
+func (s *CommitService) GetCommitByPipelineIdAndCommitId(pipelineId string, commitId string) (*entities.Commit, error) {
+	return s.commitStore.GetCommitByPipelineIdAndCommitId(pipelineId, commitId)
+}
+
 func (s *CommitService) CreateCommit(commit entities.Commit) (*entities.Commit, error) {
 	// If commit exist for same commit, return error
 	_, err := s.commitStore.GetCommitByPipelineIdAndCommitId(commit.PipelineId, commit.CommitId)
@@ -69,6 +74,7 @@ func (s *CommitService) UpdateCommitByEvent(event entities.Event) (*entities.Com
 				}
 				if commit.State == entities.COMMIT_STATE_COMMITTED {
 					// Submitted
+					commit.SubmitTime = event.Timestamp
 					commit.State = entities.COMMIT_STATE_SUBMITTED
 				}
 			}

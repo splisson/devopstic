@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/splisson/devopstic/persistence"
+	"os"
 	"testing"
 )
 
@@ -12,8 +13,16 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testEventStore = persistence.NewEventStoreFake()
-	testCommitStore = persistence.NewCommitStoreFake()
-	testIncidentStore = persistence.NewIncidentStoreFake()
+	if os.Getenv("TEST_WITH_POSTGRES") == "true" {
+		db := persistence.NewPostgresqlConnectionLocalhost()
+		testEventStore = persistence.NewEventStoreDB(db)
+		testCommitStore = persistence.NewCommitStoreDB(db)
+		testIncidentStore = persistence.NewIncidentStoreDB(db)
+	} else {
+		testEventStore = persistence.NewEventStoreFake()
+		testCommitStore = persistence.NewCommitStoreFake()
+		testIncidentStore = persistence.NewIncidentStoreFake()
+	}
+
 	m.Run()
 }

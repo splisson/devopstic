@@ -50,7 +50,7 @@ func (e *EventHandlers) PostEvents(c *gin.Context) {
 		// TODO: create or update incident
 		// err := e.incidentService.HandleEvent(event)
 	} else {
-		err = e.commitService.HandleEvent(*event)
+		_, err = e.commitService.HandleEvent(*event)
 	}
 	if err != nil {
 		c.JSON(500, gin.H{"error": err})
@@ -67,6 +67,7 @@ func eventToRepresentation(event entities.Event) representations.Event {
 		Status:      event.Status,
 		CommitId:    event.CommitId,
 		Environment: event.Environment,
+		Type:        event.Type,
 	}
 	return eventRepresentation
 }

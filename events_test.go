@@ -12,7 +12,6 @@ import (
 	"github.com/splisson/devopstic/representations"
 	"github.com/splisson/devopstic/services"
 	"github.com/stretchr/testify/assert"
-	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -75,7 +74,7 @@ func TestMain(m *testing.M) {
 	db.AutoMigrate(&entities.Commit{})
 	db.AutoMigrate(&entities.Incident{})
 	commitStore := persistence.NewCommitStoreDB(db)
-	eventStore := persistence.NewEventDBStore(db)
+	eventStore := persistence.NewEventStoreDB(db)
 	eventService := services.NewEventService(eventStore)
 	commitService := services.NewCommitService(commitStore)
 	commitHandlers := handlers.NewCommitHandlers(commitService)
@@ -132,7 +131,7 @@ func TestPostEvents(t *testing.T) {
 			"type":        entities.EVENT_COMMIT,
 			"status":      entities.STATUS_SUCCESS,
 			"commit_id":   uuid.New().String(),
-			"pipeline_id": fmt.Sprintf("api_%s", uuid.New().String()),
+			"pipeline_id": "test",
 			"environment": "dev",
 			"timestamp":   time.Now().Unix(),
 		}
@@ -162,9 +161,9 @@ func TestPostEvents(t *testing.T) {
 			"type":        entities.EVENT_COMMIT,
 			"status":      entities.STATUS_SUCCESS,
 			"commit_id":   uuid.New().String(),
-			"pipeline_id": fmt.Sprintf("api_%s", uuid.New().String()),
+			"pipeline_id": "test",
 			"environment": "dev",
-			"timestamp":   time.Now().Add(mult * time.Minute).Unix(), //.Format(time.RFC3339),
+			"timestamp":   time.Now().Add(5 * time.Minute).Unix(), //.Format(time.RFC3339),
 		}
 		message["commit_id"] = uuid.New().String()
 		postEvent(t, "header", message)

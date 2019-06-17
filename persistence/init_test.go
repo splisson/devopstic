@@ -30,10 +30,11 @@ func cleanupTestDB(dbFilepath string) {
 func TestMain(m *testing.M) {
 	db, dbFilepath = initTestDB(m)
 	testUserStore = NewUserDBStore(db)
-	testEventStore = NewEventDBStore(db)
+	testEventStore = NewEventStoreDB(db)
 	testCommitStore = NewCommitStoreDB(db)
-	testIncidentStore = NewIncidentDBStore(db)
+	testIncidentStore = NewIncidentStoreDB(db)
 	CreateTables(db)
-	m.Run()
+	exitCode := m.Run()
 	cleanupTestDB(dbFilepath)
+	os.Exit(exitCode)
 }

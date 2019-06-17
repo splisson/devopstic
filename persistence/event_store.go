@@ -16,7 +16,7 @@ type EventStoreDB struct {
 	db *gorm.DB
 }
 
-func NewEventDBStore(db *gorm.DB) *EventStoreDB {
+func NewEventStoreDB(db *gorm.DB) *EventStoreDB {
 	store := new(EventStoreDB)
 	store.db = db
 	db.LogMode(true)

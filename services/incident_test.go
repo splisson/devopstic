@@ -12,7 +12,7 @@ var (
 	testIncident = entities.Incident{
 		OpeningTime: time.Now(),
 		IncidentId:  uuid.New().String(),
-		PipelineId:  "test_pipeline",
+		PipelineId:  "test",
 		Status:      "failure",
 		Environment: "unit_test",
 	}

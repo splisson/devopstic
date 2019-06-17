@@ -18,7 +18,7 @@ type IncidentStoreDB struct {
 	db *gorm.DB
 }
 
-func NewIncidentDBStore(db *gorm.DB) *IncidentStoreDB {
+func NewIncidentStoreDB(db *gorm.DB) *IncidentStoreDB {
 	store := new(IncidentStoreDB)
 	store.db = db
 	db.LogMode(true)

@@ -12,7 +12,7 @@ import (
 var (
 	testCommit = entities.Commit{
 		CommitTime: time.Now(),
-		PipelineId: uuid.New().String(),
+		PipelineId: "test",
 		CommitId:   "1234567890",
 	}
 )
