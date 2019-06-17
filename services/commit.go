@@ -7,21 +7,37 @@ import (
 )
 
 type CommitServiceInterface interface {
+	HandleEvent(event entities.Event) error
 	CreateCommit(event entities.Commit) (*entities.Commit, error)
 	GetCommits() ([]entities.Commit, error)
-	UpdateCommitByEvent(commitEvent entities.CommitEvent) (*entities.Commit, error)
+	UpdateCommitByEvent(event entities.Event) (*entities.Commit, error)
 }
 
 type CommitService struct {
-	commitStore     persistence.CommitStoreInterface
-	deploymentStore persistence.DeploymentStoreInterface
+	commitStore persistence.CommitStoreInterface
 }
 
-func NewCommitService(commitStore persistence.CommitStoreInterface, deploymentStore persistence.DeploymentStoreInterface) *CommitService {
+func NewCommitService(commitStore persistence.CommitStoreInterface) *CommitService {
 	service := new(CommitService)
 	service.commitStore = commitStore
-	service.deploymentStore = deploymentStore
 	return service
+}
+
+func (s *CommitService) HandleEvent(event entities.Event) (*entities.Commit, error) {
+	if event.Type == entities.EVENT_COMMIT {
+		// Create commit
+		newCommit := entities.Commit{
+			PipelineId: event.PipelineId,
+			CommitId:   event.CommitId,
+			State:      entities.COMMIT_STATE_COMMITTED,
+			CommitTime: event.Timestamp,
+		}
+		return s.CreateCommit(newCommit)
+
+	} else {
+		// Update commit
+		return s.UpdateCommitByEvent(event)
+	}
 }
 
 func (s *CommitService) GetCommits() ([]entities.Commit, error) {
@@ -39,13 +55,13 @@ func (s *CommitService) CreateCommit(commit entities.Commit) (*entities.Commit, 
 	return s.commitStore.CreateCommit(commit)
 }
 
-func (s *CommitService) UpdateCommitByEvent(commitEvent entities.CommitEvent) (*entities.Commit, error) {
-	commit, err := s.commitStore.GetCommitByPipelineIdAndCommitId(commitEvent.PipelineId, commitEvent.CommitId)
+func (s *CommitService) UpdateCommitByEvent(event entities.Event) (*entities.Commit, error) {
+	commit, err := s.commitStore.GetCommitByPipelineIdAndCommitId(event.PipelineId, event.CommitId)
 	if err != nil {
 		return nil, errors.New("no commit matching to update")
 	} else {
-		if commitEvent.Type == entities.COMMIT_EVENT_SUBMIT {
-			if commitEvent.Status == entities.STATUS_SUCCESS {
+		if event.Type == entities.EVENT_SUBMIT {
+			if event.Status == entities.STATUS_SUCCESS {
 
 				if commit.State == entities.COMMIT_STATE_SUBMITTED {
 					// NOOP
@@ -56,8 +72,8 @@ func (s *CommitService) UpdateCommitByEvent(commitEvent entities.CommitEvent) (*
 					commit.State = entities.COMMIT_STATE_SUBMITTED
 				}
 			}
-		} else if commitEvent.Type == entities.COMMIT_EVENT_APPROVE {
-			if commitEvent.Status == entities.STATUS_SUCCESS {
+		} else if event.Type == entities.EVENT_APPROVE {
+			if event.Status == entities.STATUS_SUCCESS {
 
 				if commit.State == entities.COMMIT_STATE_COMMITTED {
 					// Bypass submission
@@ -66,22 +82,14 @@ func (s *CommitService) UpdateCommitByEvent(commitEvent entities.CommitEvent) (*
 				if commit.State == entities.COMMIT_STATE_COMMITTED ||
 					commit.State == entities.COMMIT_STATE_SUBMITTED {
 					// Approved: update review lead time
-					commit.ApprovalTime = commitEvent.Timestamp
+					commit.ApprovalTime = event.Timestamp
 					commit.State = entities.COMMIT_STATE_APPROVED
 					commit.ReviewLeadTime = commit.ApprovalTime.Unix() - commit.SubmitTime.Unix()
 					commit.TotalLeadTime = commit.ReviewLeadTime
 				}
 			}
-		} else if commitEvent.Type == entities.COMMIT_EVENT_DEPLOY {
-			// Create deployment
-			deployment := entities.Deployment{
-				Timestamp:   commitEvent.Timestamp,
-				Status:      commitEvent.Status,
-				CommitId:    commit.CommitId,
-				PipelineId:  commit.PipelineId,
-				Environment: commitEvent.Environment,
-			}
-			if commitEvent.Status == entities.STATUS_SUCCESS {
+		} else if event.Type == entities.EVENT_DEPLOY {
+			if event.Status == entities.STATUS_SUCCESS {
 				if commit.State == entities.COMMIT_STATE_COMMITTED ||
 					commit.State == entities.COMMIT_STATE_SUBMITTED {
 					// Bypass submission and approval as if they happened at creation time of the commit
@@ -91,15 +99,10 @@ func (s *CommitService) UpdateCommitByEvent(commitEvent entities.CommitEvent) (*
 				// Update state
 				commit.State = entities.COMMIT_STATE_DEPLOYED
 				// Update DeploymentLeadTime
-				commit.DeploymentTime = commitEvent.Timestamp
+				commit.DeploymentTime = event.Timestamp
 				commit.DeploymentLeadTime = commit.DeploymentTime.Unix() - commit.ApprovalTime.Unix()
 				commit.TotalLeadTime = commit.ReviewLeadTime + commit.DeploymentLeadTime
 			}
-			_, err := s.deploymentStore.CreateDeployment(deployment)
-			if err != nil {
-				return nil, errors.New("error creating deployment")
-			}
-
 		}
 		return s.commitStore.UpdateCommit(*commit)
 	}

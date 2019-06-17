@@ -22,11 +22,12 @@ The goal is to be able to track the following metrics, as identified in "Acceler
 Number of deployment per period of time
 
 **Lead Time**
+
 Time between a commit is submitted for review and the time it gets deployed.
 
 It can be decomposed in two:
-- **Review Lead Time** (commit submitted for review to approved)
-- **Deployment Lead** Time (approved to deployed successfully)
+- **Review Lead Time**: from commit submitted for review to approved
+- **Deployment Lead Time**: from approved to deployed successfully
 
 **Mean Time To Restore**
 
@@ -45,6 +46,8 @@ Ratio of failed deployment over total number of deployments.
 ### Commit
 A commit is the base unit we track in order to compute the metrics related to code review and deployments.
 ### Event
-A commit event is sent to signal a transition of state for a commit.
+An event is sent to signal a transition of state for a commit.
+### Deployment
+A deployment tracks the deployments if a commit in a given environment
 ### Incident
 An incident is created when the incident is opened and updated when resolved.

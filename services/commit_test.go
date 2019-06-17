@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/splisson/devopstic/entities"
 	"github.com/stretchr/testify/assert"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -18,7 +19,7 @@ var (
 
 func TestCreateCommit(t *testing.T) {
 
-	commitService := NewCommitService(testCommitStore, nil)
+	commitService := NewCommitService(testCommitStore)
 
 	t.Run("should create build without same pipelineId and commit", func(t *testing.T) {
 		newCommit := testCommit
@@ -44,7 +45,10 @@ func TestCreateCommit(t *testing.T) {
 
 func TestCommitUpdate(t *testing.T) {
 
-	commitService := NewCommitService(testCommitStore, testDeploymentStore)
+	commitService := NewCommitService(testCommitStore)
+	rand.Seed(time.Now().UnixNano())
+	random := rand.Intn(10)
+	mult := time.Duration(-5 * random)
 
 	t.Run("should create commit in commited state", func(t *testing.T) {
 		newCommit := testCommit
@@ -62,13 +66,14 @@ func TestCommitUpdate(t *testing.T) {
 
 	t.Run("should update state to submitted", func(t *testing.T) {
 		newCommit := testCommit
-		commitEvent := entities.CommitEvent{
+		event := entities.Event{
 			Status:     entities.STATUS_SUCCESS,
-			Type:       entities.COMMIT_EVENT_SUBMIT,
+			Type:       entities.EVENT_SUBMIT,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
+			Timestamp:  time.Now(),
 		}
-		commit, err := commitService.UpdateCommitByEvent(commitEvent)
+		commit, err := commitService.UpdateCommitByEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_SUBMITTED, commit.State)
 	})
@@ -76,68 +81,73 @@ func TestCommitUpdate(t *testing.T) {
 	t.Run("should update state from committed to approved", func(t *testing.T) {
 		newCommit := testCommit
 		newCommit.CommitId = uuid.New().String()
+		newCommit.CommitTime = time.Now().Add(mult * time.Minute)
 		commit, err := commitService.CreateCommit(newCommit)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_COMMITTED, commit.State)
-		commitEvent := entities.CommitEvent{
+		event := entities.Event{
 			Status:     entities.STATUS_SUCCESS,
-			Type:       entities.COMMIT_EVENT_APPROVE,
+			Type:       entities.EVENT_APPROVE,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
+			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(commitEvent)
+		commit, err = commitService.UpdateCommitByEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_APPROVED, commit.State)
-
+		assert.True(t, commit.ReviewLeadTime > 0, "review lead time is > 0")
+		assert.True(t, commit.TotalLeadTime == commit.ReviewLeadTime, "total lead time = review lead time")
 	})
 
 	t.Run("should update state from submitted to approved", func(t *testing.T) {
 		newCommit := testCommit
 		newCommit.CommitId = uuid.New().String()
+		newCommit.CommitTime = time.Now().Add(mult * time.Minute)
 		commit, err := commitService.CreateCommit(newCommit)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_COMMITTED, commit.State)
-		commitEvent := entities.CommitEvent{
+		event := entities.Event{
 			Status:     entities.STATUS_SUCCESS,
-			Type:       entities.COMMIT_EVENT_SUBMIT,
+			Type:       entities.EVENT_SUBMIT,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
+			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(commitEvent)
+		commit, err = commitService.UpdateCommitByEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_SUBMITTED, commit.State)
-		commitEvent = entities.CommitEvent{
+		event = entities.Event{
 			Status:     entities.STATUS_SUCCESS,
-			Type:       entities.COMMIT_EVENT_APPROVE,
+			Type:       entities.EVENT_APPROVE,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
+			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(commitEvent)
+		commit, err = commitService.UpdateCommitByEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_APPROVED, commit.State)
-
+		assert.True(t, commit.ReviewLeadTime > 0, "review lead time is > 0")
+		assert.True(t, commit.TotalLeadTime == commit.ReviewLeadTime, "total lead time = review lead time")
 	})
 
 	t.Run("should update state from committed to deployed", func(t *testing.T) {
 		newCommit := testCommit
 		newCommit.CommitId = uuid.New().String()
+		newCommit.CommitTime = time.Now().Add(mult * time.Minute)
 		commit, err := commitService.CreateCommit(newCommit)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_COMMITTED, commit.State)
-		commitEvent := entities.CommitEvent{
+		event := entities.Event{
 			Status:     entities.STATUS_SUCCESS,
-			Type:       entities.COMMIT_EVENT_DEPLOY,
+			Type:       entities.EVENT_DEPLOY,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
+			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(commitEvent)
+		commit, err = commitService.UpdateCommitByEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_DEPLOYED, commit.State)
-		deployments, err := testDeploymentStore.GetDeploymentsByCommitId(commit.PipelineId, commit.CommitId)
-		deployment := deployments[0]
-		assert.Nil(t, err, "no error")
-		assert.NotNil(t, deployment, "deployment found")
-		assert.Equal(t, commitEvent.Status, deployment.Status)
-		assert.Equal(t, commitEvent.CommitId, deployment.CommitId)
+		assert.True(t, commit.DeploymentLeadTime > 0, "deployment lead time is > 0")
+		assert.True(t, commit.TotalLeadTime == (commit.ReviewLeadTime+commit.DeploymentLeadTime), "total lead time = review lead time + deployment lead time ")
 	})
 }

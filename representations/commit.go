@@ -13,15 +13,6 @@ type Commit struct {
 	CommitId           string `json:"commit_id"`                      // Source code commit
 }
 
-type CommitEvent struct {
-	PipelineId  string `json:"pipeline_id"`
-	CommitId    string `json:"commit_id"`
-	Timestamp   int64  `json:"timestamp"`
-	Type        string `json:"type"`   // Event type
-	Status      string `json:"status"` // success or failure
-	Environment string `json:"environment"`
-}
-
 type CommitResults struct {
 	Items []Commit `json:"items"`
 	Count int      `json:"count"`

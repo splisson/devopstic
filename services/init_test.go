@@ -6,13 +6,13 @@ import (
 )
 
 var (
-	testDeploymentStore persistence.DeploymentStoreInterface
-	testCommitStore     persistence.CommitStoreInterface
-	testIncidentStore   persistence.IncidentStoreInterface
+	testEventStore    persistence.EventStoreInterface
+	testCommitStore   persistence.CommitStoreInterface
+	testIncidentStore persistence.IncidentStoreInterface
 )
 
 func TestMain(m *testing.M) {
-	testDeploymentStore = persistence.NewDeploymentStoreFake()
+	testEventStore = persistence.NewEventStoreFake()
 	testCommitStore = persistence.NewCommitStoreFake()
 	testIncidentStore = persistence.NewIncidentStoreFake()
 	m.Run()

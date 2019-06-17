@@ -5,7 +5,6 @@ import (
 	"github.com/splisson/devopstic/entities"
 	"github.com/splisson/devopstic/representations"
 	"github.com/splisson/devopstic/services"
-	"time"
 )
 
 type CommitHandlers struct {
@@ -32,17 +31,6 @@ func commitToRepresentation(commit entities.Commit) representations.Commit {
 		ReviewLeadTime:     commit.ReviewLeadTime,
 	}
 }
-func representationToCommitEvent(representation representations.CommitEvent) entities.CommitEvent {
-	timestamp := time.Unix(representation.Timestamp, 0)
-	return entities.CommitEvent{
-		PipelineId:  representation.PipelineId,
-		CommitId:    representation.CommitId,
-		Environment: representation.Environment,
-		Status:      representation.Status,
-		Type:        representation.Type,
-		Timestamp:   timestamp,
-	}
-}
 
 func (e *CommitHandlers) GetCommits(c *gin.Context) {
 	events, err := e.commitService.GetCommits()
@@ -60,34 +48,4 @@ func (e *CommitHandlers) GetCommits(c *gin.Context) {
 		Limit: -1,
 	}
 	c.JSON(200, results)
-}
-
-func (e *CommitHandlers) PostCommitEvent(c *gin.Context) {
-	var commit *entities.Commit
-	var commitEventValues representations.CommitEvent
-	var err error
-	if bindErr := c.Bind(&commitEventValues); bindErr != nil {
-		c.JSON(400, gin.H{"error": bindErr})
-		return
-	}
-	commitEvent := representationToCommitEvent(commitEventValues)
-	if commitEvent.Type == entities.COMMIT_EVENT_COMMIT {
-		// Create
-		newCommit := entities.Commit{
-			PipelineId: commitEvent.PipelineId,
-			CommitId:   commitEvent.CommitId,
-			State:      entities.COMMIT_STATE_COMMITTED,
-			CommitTime: commitEvent.Timestamp,
-		}
-		commit, err = e.commitService.CreateCommit(newCommit)
-
-	} else {
-		// Update
-		commit, err = e.commitService.UpdateCommitByEvent(commitEvent)
-	}
-	if err != nil {
-		c.JSON(500, gin.H{"error": err})
-		return
-	}
-	c.JSON(200, commitToRepresentation(*commit))
 }

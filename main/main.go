@@ -13,7 +13,8 @@ func main() {
 	deploymentStore := persistence.NewDeploymentDBStore(db)
 	commitService := services.NewCommitService(commitStore, deploymentStore)
 	commitHandlers := handlers.NewCommitHandlers(commitService)
-	r := devopstic.BuildEngine(commitHandlers)
+	eventHandlers := handlers.NewEventHandlers(commitService)
+	r := devopstic.BuildEngine(commitHandlers, eventHandlers)
 	//fmt.Printf("Starting opstic server\n")
 	err := r.Run()
 	if err != nil {

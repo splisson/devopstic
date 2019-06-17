@@ -6,7 +6,7 @@ import (
 	"github.com/splisson/devopstic/middleware"
 )
 
-func BuildEngine(commitHandlers *handlers.CommitHandlers) *gin.Engine {
+func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handlers.EventHandlers) *gin.Engine {
 
 	r := gin.New()
 
@@ -30,9 +30,10 @@ func BuildEngine(commitHandlers *handlers.CommitHandlers) *gin.Engine {
 	auth := r.Group("/")
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
-		auth.GET("/events", commitHandlers.GetCommits)
-		auth.POST("/events", commitHandlers.PostCommitEvent)
-		auth.POST("/webhook/:token/events", commitHandlers.PostCommitEvent)
+		auth.GET("/commits", commitHandlers.GetCommits)
+		auth.GET("/events", eventHandlers.GetEvents)
+		auth.POST("/events", eventHandlers.PostEvents)
+		auth.POST("/webhook/:token/events", eventHandlers.PostEvents)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 	}
 

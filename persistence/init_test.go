@@ -11,10 +11,10 @@ var (
 	db         *gorm.DB
 	dbFilepath string
 
-	testDeploymentStore *DeploymentStoreDB
-	testCommitStore     *CommitStoreDB
-	testIncidentStore   *IncidentStoreDB
-	testUserStore       *UserDBStore
+	testEventStore    *EventStoreDB
+	testCommitStore   *CommitStoreDB
+	testIncidentStore *IncidentStoreDB
+	testUserStore     *UserDBStore
 )
 
 func initTestDB(m *testing.M) (*gorm.DB, string) {
@@ -30,7 +30,7 @@ func cleanupTestDB(dbFilepath string) {
 func TestMain(m *testing.M) {
 	db, dbFilepath = initTestDB(m)
 	testUserStore = NewUserDBStore(db)
-	testDeploymentStore = NewDeploymentDBStore(db)
+	testEventStore = NewEventDBStore(db)
 	testCommitStore = NewCommitStoreDB(db)
 	testIncidentStore = NewIncidentDBStore(db)
 	CreateTables(db)
