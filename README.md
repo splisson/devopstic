@@ -42,15 +42,11 @@ Ratio of failed deployment over total number of deployments.
 - https://cloudplatformonline.com/2018-state-of-devops.html
 - https://www.amazon.com/Accelerate-Software-Performing-Technology-Organizations-ebook/dp/B07B9F83WM
 
-## Concepts
-### Event
-An event is sent to signal a transition of state for a commit, or an incident.
-Deployments are a type of event.
-### Commit
-A commit is the base unit we track in order to compute the metrics related to code review and deployments.
-#### Lifecycle
-![commit state chart](doc/commit_state_chart.png "Commit state chart")
-### Incident
-An incident is created when the incident is opened and updated when resolved.
-#### Lifecycle
-![incident state chart](doc/incident_state_chart.png "Incident state chart")
+## Installation
+
+- Kubernetes with Helm
+
+`helm install https://github.com/splisson/devopstic/helm`
+
+## Documentation
+- [Domain](doc/concepts.md)
