@@ -60,6 +60,12 @@ func (s *IncidentStoreFake) CreateIncident(incident entities.Incident) (*entitie
 func (s *IncidentStoreFake) UpdateIncident(incident entities.Incident) (*entities.Incident, error) {
 	for index, item := range s.incidents {
 		if item.IncidentId == incident.IncidentId {
+			if incident.OpeningTime == time.Unix(0, 0) {
+				incident.OpeningTime = item.OpeningTime
+			}
+			if incident.ResolutionTime == time.Unix(0, 0) {
+				incident.ResolutionTime = item.ResolutionTime
+			}
 			s.incidents[index] = incident
 			return &incident, nil
 		}

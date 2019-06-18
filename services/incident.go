@@ -5,11 +5,13 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/splisson/devopstic/entities"
 	"github.com/splisson/devopstic/persistence"
+	"time"
 )
 
 type IncidentServiceInterface interface {
-	CreateOrUpdateIncident(event entities.Incident) (*entities.Incident, error)
+	CreateOrUpdateIncident(incident entities.Incident) (*entities.Incident, error)
 	GetIncidents() ([]entities.Incident, error)
+	HandleEvent(event entities.Event) (*entities.Incident, error)
 }
 
 type IncidentService struct {
@@ -20,6 +22,26 @@ func NewIncidentService(incidentStore persistence.IncidentStoreInterface) *Incid
 	service := new(IncidentService)
 	service.incidentStore = incidentStore
 	return service
+}
+
+func (s *IncidentService) HandleEvent(event entities.Event) (*entities.Incident, error) {
+	if event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE {
+		newIncident := entities.Incident{
+			IncidentId:  event.IncidentId,
+			PipelineId:  event.PipelineId,
+			Status:      event.Status,
+			Environment: event.Environment,
+		}
+		if event.Status == entities.STATUS_SUCCESS {
+			newIncident.ResolutionTime = event.Timestamp
+		} else {
+			newIncident.OpeningTime = event.Timestamp
+		}
+		incident, err := s.CreateOrUpdateIncident(newIncident)
+		return incident, err
+	} else {
+		return nil, errors.New("event not supported by incident service")
+	}
 }
 
 func (s *IncidentService) GetIncidents() ([]entities.Incident, error) {
@@ -40,7 +62,11 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 		return nil, err
 	}
 	// Existing incident failure?
-	existingIncident, err := s.incidentStore.GetIncidentByIncidentId(incident.IncidentId)
+	var existingIncident *entities.Incident = nil
+	var err error = nil
+	if len(incident.IncidentId) > 0 {
+		existingIncident, err = s.incidentStore.GetIncidentByIncidentId(incident.IncidentId)
+	}
 	if err != nil || existingIncident == nil {
 		// No existing incident => create
 		log.Infof("no incident for that IncidentId => create")
@@ -50,8 +76,9 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 		if existingIncident.Status == entities.STATUS_FAILURE {
 			if incident.Status == entities.STATUS_SUCCESS {
 				// Recovery
-				incident.TimeToRestore = incident.OpeningTime.Unix() - existingIncident.OpeningTime.Unix()
+				incident.TimeToRestore = incident.ResolutionTime.Unix() - existingIncident.OpeningTime.Unix()
 				incident.ID = existingIncident.ID
+				incident.OpeningTime = existingIncident.OpeningTime
 				return s.incidentStore.UpdateIncident(incident)
 			} else {
 				// NOOP: keep original failure time
@@ -63,6 +90,7 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 				return existingIncident, nil
 			} else {
 				// Updating existing back to failure: reset time to restore
+				incident.ResolutionTime = time.Unix(0, 0)
 				incident.TimeToRestore = 0
 				return s.incidentStore.UpdateIncident(incident)
 			}
