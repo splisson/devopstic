@@ -25,7 +25,7 @@ var (
 
 const (
 	PIPELINE_ID = "web"
-	ENVIRONMENT = "test"
+	ENVIRONMENT = "dev"
 )
 
 // Helper function to process a request and test its response

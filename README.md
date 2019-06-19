@@ -1,5 +1,7 @@
 # DevOpstic
 
+![dashboard](doc/devopstic_demo.png "DevOpstic dashboard")
+
 ## Overview
 DevOpstic allows you to store and display information related to your DevOps pipelines.
 
@@ -50,3 +52,6 @@ Ratio of failed deployment over total number of deployments.
 
 ## Documentation
 - [Domain](doc/concepts.md)
+
+## License
+- [MIT License](license.md)
