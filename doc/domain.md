@@ -1,4 +1,4 @@
-# Concepts
+# Domain
 ## Event
 An event is sent to signal a transition of state for a commit, or an incident.
 Deployments are a type of event.

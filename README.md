@@ -51,7 +51,7 @@ Ratio of failed deployment over total number of deployments.
 `helm install https://github.com/splisson/devopstic/helm`
 
 ## Documentation
-- [Domain](doc/concepts.md)
+- [Domain](doc/domain.md)
 
 ## License
 - [MIT License](license.md)
