@@ -9,14 +9,16 @@ import (
 )
 
 type EventHandlers struct {
-	eventService  services.EventServiceInterface
-	commitService services.CommitServiceInterface
+	eventService    services.EventServiceInterface
+	commitService   services.CommitServiceInterface
+	incidentService services.IncidentServiceInterface
 }
 
-func NewEventHandlers(eventService services.EventServiceInterface, commitService services.CommitServiceInterface) *EventHandlers {
+func NewEventHandlers(eventService services.EventServiceInterface, commitService services.CommitServiceInterface, incidentService services.IncidentServiceInterface) *EventHandlers {
 	handler := new(EventHandlers)
 	handler.eventService = eventService
 	handler.commitService = commitService
+	handler.incidentService = incidentService
 	return handler
 }
 
@@ -25,6 +27,7 @@ func representationToEvent(representation representations.Event) entities.Event 
 	return entities.Event{
 		PipelineId:  representation.PipelineId,
 		CommitId:    representation.CommitId,
+		IncidentId:  representation.IncidentId,
 		Environment: representation.Environment,
 		Status:      representation.Status,
 		Type:        representation.Type,
@@ -47,8 +50,7 @@ func (e *EventHandlers) PostEvents(c *gin.Context) {
 	}
 
 	if event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE {
-		// TODO: create or update incident
-		// err := e.incidentService.HandleEvent(event)
+		_, err = e.incidentService.HandleEvent(*event)
 	} else {
 		_, err = e.commitService.HandleEvent(*event)
 	}

@@ -130,7 +130,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2)\nFROM\n  deployments\nWHERE\n  $__timeFilter(timestamp) \n  AND status = 'success'\n  AND environment = $env\n",
+              "rawSql": "SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2)\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND environment = $env\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -239,7 +239,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT failure_count/(success_count+failure_count)\nFROM ( SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as success_count\nFROM\n  deployments\nWHERE\n  $__timeFilter(timestamp) \n  AND status = 'success'\n  AND environment = $env\n) AS success,\n(SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as failure_count\nFROM\n  deployments\nWHERE\n  $__timeFilter(timestamp) \n  AND status = 'failure'\n  AND environment = $env\n) as failure\n",
+              "rawSql": "SELECT failure_count/(success_count+failure_count)\nFROM ( SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as success_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'success'\n  AND environment = $env\n) AS success,\n(SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as failure_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'failure'\n  AND environment = $env\n) as failure\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -348,7 +348,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  avg(time_to_restore/60)\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND category = 'incident'\n  AND status = 'success'\n  AND environment = $env\n  AND time_to_restore IS NOT NULL\n",
+              "rawSql": "SELECT\n  avg(time_to_restore/60)\nFROM\n  incidents\nWHERE\n  $__timeFilter(resolution_time) \n  AND state = 'resolved'\n  AND environment = $env\n  AND time_to_restore IS NOT NULL\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -469,7 +469,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.total_lead_time/60)\nFROM\n  commits\njoin deployments\non deployments.commit_id = commits.commit_id\nAND deployments.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND deployments.environment = $env\n",
+              "rawSql": "SELECT\n  AVG(commits.total_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -687,7 +687,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.deployment_lead_time/60)\nFROM\n  commits\njoin deployments\non deployments.commit_id = commits.commit_id\nAND deployments.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND deployments.environment = $env\n",
+              "rawSql": "SELECT\n  AVG(commits.deployment_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -787,5 +787,5 @@
   },
   "timezone": "",
   "title": "DevOpstic Dashboard",
-  "version": 19
+  "version": 25
 }

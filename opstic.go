@@ -25,7 +25,7 @@ func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handler
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{})
 	})
-	r.POST("/login", authMiddleware.LoginHandler)
+	r.POST("/tokens", authMiddleware.LoginHandler)
 
 	auth := r.Group("/")
 	auth.Use(authMiddleware.MiddlewareFunc())

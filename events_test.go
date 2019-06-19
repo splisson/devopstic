@@ -45,7 +45,7 @@ func Login() (string, error) {
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
 
-	req, _ := http.NewRequest("POST", "/login", body)
+	req, _ := http.NewRequest("POST", "/tokens", body)
 	req.Header.Set("Content-Type", "application/json")
 	var result map[string]interface{}
 
@@ -75,10 +75,12 @@ func TestMain(m *testing.M) {
 	db.AutoMigrate(&entities.Incident{})
 	commitStore := persistence.NewCommitStoreDB(db)
 	eventStore := persistence.NewEventStoreDB(db)
+	incidentStore := persistence.NewIncidentStoreDB(db)
 	eventService := services.NewEventService(eventStore)
 	commitService := services.NewCommitService(commitStore)
+	incidentService := services.NewIncidentService(incidentStore)
 	commitHandlers := handlers.NewCommitHandlers(commitService)
-	eventHandlers := handlers.NewEventHandlers(eventService, commitService)
+	eventHandlers := handlers.NewEventHandlers(eventService, commitService, incidentService)
 	r = BuildEngine(commitHandlers, eventHandlers)
 	var err error
 	token, err = Login()
@@ -155,7 +157,7 @@ func TestPostEvents(t *testing.T) {
 		})
 	})
 
-	t.Run("Post event committed and deploy", func(t *testing.T) {
+	t.Run("Post event committed and approve", func(t *testing.T) {
 
 		message := map[string]interface{}{
 			"type":        entities.EVENT_COMMIT,
@@ -171,6 +173,27 @@ func TestPostEvents(t *testing.T) {
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
 		event := postEvent(t, "header", message)
 		assert.True(t, event.Type == entities.EVENT_APPROVE, "approve event")
+
+	})
+
+	t.Run("Post event incident status change", func(t *testing.T) {
+
+		message := map[string]interface{}{
+			"type":        entities.EVENT_INCIDENT_STATUS_CHANGE,
+			"status":      entities.STATUS_FAILURE,
+			"incident_id": uuid.New().String(),
+			"pipeline_id": "test",
+			"environment": "dev",
+			"timestamp":   time.Now().Add(-5 * time.Minute).Unix(), //.Format(time.RFC3339),
+		}
+		message["commit_id"] = uuid.New().String()
+		event := postEvent(t, "header", message)
+		assert.True(t, event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE, "incident event")
+		message["type"] = entities.EVENT_INCIDENT_STATUS_CHANGE
+		message["status"] = entities.STATUS_SUCCESS
+		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
+		event = postEvent(t, "header", message)
+		assert.True(t, event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE, "incident event")
 
 	})
 }

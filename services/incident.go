@@ -29,12 +29,13 @@ func (s *IncidentService) HandleEvent(event entities.Event) (*entities.Incident,
 		newIncident := entities.Incident{
 			IncidentId:  event.IncidentId,
 			PipelineId:  event.PipelineId,
-			Status:      event.Status,
 			Environment: event.Environment,
 		}
 		if event.Status == entities.STATUS_SUCCESS {
+			newIncident.State = entities.INCIDENT_STATE_RESOLVED
 			newIncident.ResolutionTime = event.Timestamp
 		} else {
+			newIncident.State = entities.INCIDENT_STATE_OPENED
 			newIncident.OpeningTime = event.Timestamp
 		}
 		incident, err := s.CreateOrUpdateIncident(newIncident)
@@ -73,9 +74,13 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 		return s.incidentStore.CreateIncident(incident)
 	} else {
 		// Existing incident so update based on status
-		if existingIncident.Status == entities.STATUS_FAILURE {
-			if incident.Status == entities.STATUS_SUCCESS {
+		if existingIncident.State == entities.INCIDENT_STATE_OPENED {
+			if incident.State == entities.INCIDENT_STATE_RESOLVED {
 				// Recovery
+				if incident.ResolutionTime.Unix() < existingIncident.OpeningTime.Unix() {
+					// Problem with timestamp
+					return nil, errors.New("incident resolution time is less then opening time")
+				}
 				incident.TimeToRestore = incident.ResolutionTime.Unix() - existingIncident.OpeningTime.Unix()
 				incident.ID = existingIncident.ID
 				incident.OpeningTime = existingIncident.OpeningTime
@@ -85,7 +90,7 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 				return existingIncident, nil
 			}
 		} else {
-			if incident.Status == entities.STATUS_SUCCESS {
+			if incident.State == entities.INCIDENT_STATE_RESOLVED {
 				// NOOP: keep first recovery
 				return existingIncident, nil
 			} else {
