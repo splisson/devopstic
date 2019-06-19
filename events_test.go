@@ -23,6 +23,11 @@ var (
 	token string
 )
 
+const (
+	PIPELINE_ID = "web"
+	ENVIRONMENT = "test"
+)
+
 // Helper function to process a request and test its response
 func testHTTPResponse(t *testing.T, r *gin.Engine, req *http.Request, f func(w *httptest.ResponseRecorder) bool) {
 
@@ -133,8 +138,8 @@ func TestPostEvents(t *testing.T) {
 			"type":        entities.EVENT_COMMIT,
 			"status":      entities.STATUS_SUCCESS,
 			"commit_id":   uuid.New().String(),
-			"pipeline_id": "test",
-			"environment": "dev",
+			"pipeline_id": PIPELINE_ID,
+			"environment": ENVIRONMENT,
 			"timestamp":   time.Now().Unix(),
 		}
 		bytesRepresentation, _ := json.Marshal(message)
@@ -163,15 +168,16 @@ func TestPostEvents(t *testing.T) {
 			"type":        entities.EVENT_COMMIT,
 			"status":      entities.STATUS_SUCCESS,
 			"commit_id":   uuid.New().String(),
-			"pipeline_id": "test",
-			"environment": "dev",
-			"timestamp":   time.Now().Add(5 * time.Minute).Unix(), //.Format(time.RFC3339),
+			"pipeline_id": PIPELINE_ID,
+			"environment": ENVIRONMENT,
+			"timestamp":   time.Now().Add(-5 * time.Minute).Unix(), //.Format(time.RFC3339),
 		}
 		message["commit_id"] = uuid.New().String()
 		postEvent(t, "header", message)
 		message["type"] = "approve"
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
-		event := postEvent(t, "header", message)
+		event, err := postEvent(t, "header", message)
+		assert.Nil(t, err, "no error")
 		assert.True(t, event.Type == entities.EVENT_APPROVE, "approve event")
 
 	})
@@ -182,23 +188,51 @@ func TestPostEvents(t *testing.T) {
 			"type":        entities.EVENT_INCIDENT_STATUS_CHANGE,
 			"status":      entities.STATUS_FAILURE,
 			"incident_id": uuid.New().String(),
-			"pipeline_id": "test",
-			"environment": "dev",
+			"pipeline_id": PIPELINE_ID,
+			"environment": ENVIRONMENT,
 			"timestamp":   time.Now().Add(-5 * time.Minute).Unix(), //.Format(time.RFC3339),
 		}
 		message["commit_id"] = uuid.New().String()
-		event := postEvent(t, "header", message)
+		event, err := postEvent(t, "header", message)
+		assert.Nil(t, err, "no error")
 		assert.True(t, event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE, "incident event")
 		message["type"] = entities.EVENT_INCIDENT_STATUS_CHANGE
 		message["status"] = entities.STATUS_SUCCESS
 		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
-		event = postEvent(t, "header", message)
+		event, err = postEvent(t, "header", message)
+		assert.Nil(t, err, "no error")
 		assert.True(t, event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE, "incident event")
+
+	})
+
+	t.Run("Post event deploy", func(t *testing.T) {
+
+		message := map[string]interface{}{
+			"type":        entities.EVENT_COMMIT,
+			"status":      entities.STATUS_SUCCESS,
+			"incident_id": uuid.New().String(),
+			"pipeline_id": PIPELINE_ID,
+			"environment": ENVIRONMENT,
+			"timestamp":   time.Now().Add(-20 * time.Minute).Unix(), //.Format(time.RFC3339),
+		}
+		event, err := postEvent(t, "header", message)
+		message["timestamp"] = time.Now().Add(-10 * time.Minute).Unix()
+		message["type"] = entities.EVENT_DEPLOY
+		event, err = postEvent(t, "header", message)
+		assert.Nil(t, err, "no error")
+		assert.True(t, event.Type == entities.EVENT_DEPLOY, "deploy event")
+		message["timestamp"] = time.Now().Add(-2 * time.Minute).Unix() //.Format(time.RFC3339)
+		event, err = postEvent(t, "header", message)
+		assert.True(t, event.Type == entities.EVENT_DEPLOY, "deploy event")
+		message["timestamp"] = time.Now().Unix() //.Format(time.RFC3339)
+		message["status"] = entities.STATUS_SUCCESS
+		event, err = postEvent(t, "header", message)
+		assert.True(t, event.Type == entities.EVENT_DEPLOY, "deploy event")
 
 	})
 }
 
-func postEvent(t *testing.T, authMethod string, message map[string]interface{}) representations.Event {
+func postEvent(t *testing.T, authMethod string, message map[string]interface{}) (representations.Event, error) {
 
 	bytesRepresentation, _ := json.Marshal(message)
 	body := bytes.NewBuffer(bytesRepresentation)
@@ -213,14 +247,14 @@ func postEvent(t *testing.T, authMethod string, message map[string]interface{}) 
 	}
 	req.Header.Set("Content-Type", "application/json")
 	var result representations.Event
-
+	var err error = nil
 	testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
 		statusOK := w.Code == http.StatusOK
-		err := json.NewDecoder(w.Body).Decode(&result)
+		err = json.NewDecoder(w.Body).Decode(&result)
 		pageOK := err == nil && result.Id != ""
 
 		return statusOK && pageOK
 	})
 
-	return result
+	return result, err
 }
