@@ -1,6 +1,6 @@
-#API Usage
+# API Usage
 
-###Get an authentication token
+## Get an authentication token
 
 This api returns a token. Default validity is 1 year.
 
@@ -23,7 +23,7 @@ Response:
 {"code":200,"expire":"2020-06-18T20:58:56-07:00","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI1MzkxMzYsImlkIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTU2MTAwMzEzNn0.FpPkK-5Tf-o_HAHjbf9FDc15w3Dq8jXPRco6ucR5vsk"}
 `
 
-###Create an event
+## Create an event
 This api creates an event and the resources the event may require (commit, incident).
 It return the event created.
 
@@ -50,7 +50,7 @@ It return the event created.
 - status: "success" or "failure" status of event
 - timestamp: epoch time in seconds of the event
 
-#####Example
+##### Example
 `
 curl -XPOST http://localhost:8080/events -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI1NDAwMzksImlkIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTU2MTAwNDAzOX0.gKePomW78fxblYN9GIzNBgGbV8qFc0Kg71CBKqhzIxw" -d '{ "type":"commit", "pipeline_id":"api", "environment": "dev", "commit_id":"1un1queid", "status":"success", "timestamp":1561003507}'
 `
@@ -69,7 +69,7 @@ Response:
 	"environment":"dev"}
 ```
 
-### Get Events
+## Get Events
 
 #### GET /events
 
