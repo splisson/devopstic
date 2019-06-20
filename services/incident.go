@@ -35,7 +35,7 @@ func (s *IncidentService) HandleEvent(event entities.Event) (*entities.Incident,
 			newIncident.State = entities.INCIDENT_STATE_RESOLVED
 			newIncident.ResolutionTime = event.Timestamp
 		} else {
-			newIncident.State = entities.INCIDENT_STATE_OPENED
+			newIncident.State = entities.INCIDENT_STATE_OPEN
 			newIncident.OpeningTime = event.Timestamp
 		}
 		incident, err := s.CreateOrUpdateIncident(newIncident)
@@ -74,7 +74,7 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 		return s.incidentStore.CreateIncident(incident)
 	} else {
 		// Existing incident so update based on status
-		if existingIncident.State == entities.INCIDENT_STATE_OPENED {
+		if existingIncident.State == entities.INCIDENT_STATE_OPEN {
 			if incident.State == entities.INCIDENT_STATE_RESOLVED {
 				// Recovery
 				if incident.ResolutionTime.Unix() < existingIncident.OpeningTime.Unix() {

@@ -13,7 +13,7 @@ var (
 		OpeningTime: time.Now(),
 		IncidentId:  uuid.New().String(),
 		PipelineId:  "test",
-		Status:      "failure",
+		State:       entities.INCIDENT_STATE_OPEN,
 		Environment: "unit_test",
 	}
 )

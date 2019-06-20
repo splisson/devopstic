@@ -14,6 +14,6 @@ type Incident struct {
 }
 
 const (
-	INCIDENT_STATE_OPENED   = " opened"
+	INCIDENT_STATE_OPEN     = " open"
 	INCIDENT_STATE_RESOLVED = "resolved"
 )

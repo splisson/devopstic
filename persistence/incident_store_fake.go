@@ -11,7 +11,7 @@ var (
 	testIncident = entities.Incident{
 		OpeningTime: time.Now(),
 		PipelineId:  "test_pipeline",
-		State:       entities.INCIDENT_STATE_OPENED,
+		State:       entities.INCIDENT_STATE_OPEN,
 		IncidentId:  "1234567890",
 		Environment: "unit_test",
 	}
@@ -44,7 +44,7 @@ func (s *IncidentStoreFake) GetIncidentByIncidentId(incidentId string) (*entitie
 
 func (s *IncidentStoreFake) GetLatestFailureIncidentByPipelineIdAndEnvironment(pipelineId string, environment string) (*entities.Incident, error) {
 	for _, incident := range s.incidents {
-		if incident.PipelineId == pipelineId && incident.State == entities.INCIDENT_STATE_OPENED && incident.Environment == environment {
+		if incident.PipelineId == pipelineId && incident.State == entities.INCIDENT_STATE_OPEN && incident.Environment == environment {
 			return &incident, nil
 		}
 	}
