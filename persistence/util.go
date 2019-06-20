@@ -28,9 +28,11 @@ func NewSQLiteConnection(dbId string) (*gorm.DB, string) {
 }
 
 func CreatePostgresDBConnection(url string, port string, username string, password string, databaseName string) *gorm.DB {
+	log.Infof("Connection to Postgres : host=%s port=%s user=%s password=XXX dbname=%s sslmode=disable", url, port, username, databaseName)
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", url, port, username, password, databaseName)
 	db, err := gorm.Open("postgres", connectionString)
 	if err != nil {
+		log.Error(err)
 		panic("failed to connect to database")
 	}
 	return db
