@@ -45,10 +45,25 @@ Ratio of failed deployment over total number of deployments.
 - https://www.amazon.com/Accelerate-Software-Performing-Technology-Organizations-ebook/dp/B07B9F83WM
 
 ## Installation
+### Docker image (api)
+splisson/devopstic:v0.1
 
-- Kubernetes with Helm
-
+### Install on Kubernetes with Helm
+Available soon:
 `helm install https://github.com/splisson/devopstic/helm`
+
+### Configuration
+#### Database
+A postgres database with a database and a user authorized to create tables.
+
+#### API
+
+The api requires the following environment variables:
+- DATABASE_HOST: default: localhost
+- DATABASE_PORT: default: 5432
+- DATABASE_USER
+- DATABASE_PASSWORD
+- DATABASE_NAME: default: devopstic
 
 ## Documentation
 - [Domain](doc/domain.md)
