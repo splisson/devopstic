@@ -29,8 +29,8 @@ func TestIncidentRecovery(t *testing.T) {
 		assert.Nil(t, err, "no error")
 		assert.NotNil(t, incident, "incident not nil")
 		newIncident = testIncident
-		newIncident.Status = entities.STATUS_SUCCESS
-		newIncident.OpeningTime = time.Now()
+		newIncident.State = entities.INCIDENT_STATE_RESOLVED
+		newIncident.ResolutionTime = time.Now()
 		currentId := incident.ID
 		incident, err = incidentService.CreateOrUpdateIncident(newIncident)
 		assert.Nil(t, err, "no error")
