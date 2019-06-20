@@ -53,7 +53,7 @@ func NewPostgresqlConnectionWithEnv() *gorm.DB {
 	password := os.Getenv("DATABASE_PASSWORD")
 	databaseName := os.Getenv("DATABASE_NAME")
 	if databaseName == "" {
-		databaseName = "opstic"
+		databaseName = "devopstic"
 	}
 	return CreatePostgresDBConnection(url, port, username, password, databaseName)
 }
