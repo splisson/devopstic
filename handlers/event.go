@@ -45,7 +45,7 @@ func (e *EventHandlers) PostEvents(c *gin.Context) {
 	newEvent := representationToEvent(eventValues)
 	event, err := e.eventService.CreateEvent(newEvent)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -55,7 +55,7 @@ func (e *EventHandlers) PostEvents(c *gin.Context) {
 		_, err = e.commitService.HandleEvent(*event)
 	}
 	if err != nil {
-		c.JSON(500, gin.H{"error": err})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(200, eventToRepresentation(*event))
@@ -77,7 +77,7 @@ func eventToRepresentation(event entities.Event) representations.Event {
 func (e *EventHandlers) GetEvents(c *gin.Context) {
 	events, err := e.eventService.GetEvents()
 	if err != nil {
-		c.JSON(500, gin.H{"error": err})
+		c.JSON(500, gin.H{"error": err.Error()})
 	}
 	eventList := make([]representations.Event, 0)
 	for _, item := range events {

@@ -35,7 +35,7 @@ func commitToRepresentation(commit entities.Commit) representations.Commit {
 func (e *CommitHandlers) GetCommits(c *gin.Context) {
 	events, err := e.commitService.GetCommits()
 	if err != nil {
-		c.JSON(500, gin.H{"error": err})
+		c.JSON(500, gin.H{"error": err.Error()})
 	}
 	commitList := make([]representations.Commit, 0)
 	for _, item := range events {
