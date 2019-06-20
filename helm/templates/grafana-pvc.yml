@@ -1,0 +1,14 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: data-pvc-{{ include "devopstic.name" . }}-grafana
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    type: amazonEBS
+spec:
+  storageClassName: {{ .Values.grafana.storageClass }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.grafana.storage }}

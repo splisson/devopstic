@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devopstic.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "devopstic.name" . }}-api
+    helm.sh/chart: {{ include "devopstic.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "devopstic.name" . }}-api
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "devopstic.name" . }}-api
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          command: ["/app/devopstic"]
+          env:
+          - name: DEVOPSTIC_USER
+            valueFrom:
+              secretKeyRef:
+                name: devopstic
+                key: api_user
+          - name: DEVOPSTIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: devopstic
+                key: api_password
+          - name: DEVOPSTIC_DATABASE_HOST
+            value: "{{ .Values.api.database.host }}"
+          - name: DEVOPSTIC_DATABASE_PORT
+            value: "{{ .Values.api.database.port }}"
+          - name: DEVOPSTIC_DATABASE_NAME
+            value: "{{ .Values.api.database.name }}"
+          - name: DEVOPSTIC_DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                name: devopstic
+                key: database_user
+          - name: DEVOPSTIC_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: devopstic
+                key: database_password
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+{{ toYaml .Values.api.resources | indent 12 }}
+    {{- with .Values.api.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.api.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.api.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

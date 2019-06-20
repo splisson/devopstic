@@ -1,0 +1,39 @@
+{{- if .Values.grafana.ingress.enabled -}}
+{{- $fullName := include "devopstic.fullname" . -}}
+{{- $ingressPath := .Values.grafana.ingress.path -}}
+{{- $serviceName := .Values.grafana.serviceName -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-grafana
+  labels:
+    app.kubernetes.io/name: {{ include "devopstic.name" . }}
+    helm.sh/chart: {{ include "devopstic.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.grafana.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.grafana.ingress.tls }}
+  tls:
+  {{- range .Values.grafana.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.grafana.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: 3000
+  {{- end }}
+{{- end }}

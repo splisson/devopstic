@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.api.serviceName }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.api.serviceName }}
+    helm.sh/chart: {{ include "devopstic.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.api.service.type }}
+  ports:
+    - port: {{ .Values.api.service.port }}
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "devopstic.name" . }}-api
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.grafana.serviceName }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.grafana.serviceName }}
+    helm.sh/chart: {{ include "devopstic.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.grafana.service.type }}
+  ports:
+    - port: {{ .Values.grafana.service.port }}
+      targetPort: grafana
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "devopstic.name" . }}-grafana
+    app.kubernetes.io/instance: {{ .Release.Name }}
+

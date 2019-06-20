@@ -1,0 +1,4 @@
+dependencies:
+  - name: postgresql
+    version: 5.3.8
+    repository: "file://postgresql"

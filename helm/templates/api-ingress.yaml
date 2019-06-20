@@ -1,0 +1,39 @@
+{{- if .Values.api.ingress.enabled -}}
+{{- $fullName := include "devopstic.fullname" . -}}
+{{- $ingressPath := .Values.api.ingress.path -}}
+{{- $serviceName := .Values.api.serviceName -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-api
+  labels:
+    app.kubernetes.io/name: {{ include "devopstic.name" . }}
+    helm.sh/chart: {{ include "devopstic.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.api.ingress.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.api.ingress.tls }}
+  tls:
+  {{- range .Values.api.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.api.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $ingressPath }}
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: 8080
+  {{- end }}
+{{- end }}
