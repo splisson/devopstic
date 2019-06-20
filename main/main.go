@@ -9,6 +9,7 @@ import (
 
 func main() {
 	db := persistence.NewPostgresqlConnectionWithEnv()
+	persistence.CreateTables(db)
 	commitStore := persistence.NewCommitStoreDB(db)
 	eventStore := persistence.NewEventStoreDB(db)
 	incidentStore := persistence.NewIncidentStoreDB(db)
