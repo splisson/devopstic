@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"github.com/prometheus/common/log"
 	"github.com/splisson/devopstic/entities"
 	"github.com/splisson/devopstic/persistence"
 )
@@ -54,6 +55,7 @@ func (s *CommitService) CreateCommit(commit entities.Commit) (*entities.Commit, 
 	_, err := s.commitStore.GetCommitByPipelineIdAndCommitId(commit.PipelineId, commit.CommitId)
 	if err == nil {
 		// Found
+		log.Info("found commit with same commit_id and pipeline_id")
 		return nil, errors.New("commit already exist for this commit and pipeline id")
 	}
 	commit.State = entities.COMMIT_STATE_COMMITTED
