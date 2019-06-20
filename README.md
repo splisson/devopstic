@@ -52,6 +52,7 @@ Ratio of failed deployment over total number of deployments.
 
 ## Documentation
 - [Domain](doc/domain.md)
+- [Usage](doc/usage.md)
 
 ## License
 - [MIT License](license.md)
