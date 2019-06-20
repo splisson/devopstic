@@ -49,8 +49,11 @@ Ratio of failed deployment over total number of deployments.
 splisson/devopstic:v0.1
 
 ### Install on Kubernetes with Helm
-Available soon:
-`helm install https://github.com/splisson/devopstic/helm`
+
+From local copy of the repository:
+`helm install ./helm/`
+
+TODO: chart in repository
 
 ### Configuration
 #### Database
