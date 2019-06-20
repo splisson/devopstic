@@ -43,17 +43,17 @@ func NewPostgresqlConnectionLocalhost() *gorm.DB {
 }
 
 func NewPostgresqlConnectionWithEnv() *gorm.DB {
-	url := os.Getenv("DATABASE_HOST")
+	url := os.Getenv("DEVOPSTIC_DATABASE_HOST")
 	if url == "" {
 		url = "localhost"
 	}
-	port := os.Getenv("DATABASE_PORT")
+	port := os.Getenv("DEVOPSTIC_DATABASE_PORT")
 	if port == "" {
 		port = "5432"
 	}
-	username := os.Getenv("DATABASE_USER")
-	password := os.Getenv("DATABASE_PASSWORD")
-	databaseName := os.Getenv("DATABASE_NAME")
+	username := os.Getenv("DEVOPSTIC_DATABASE_USER")
+	password := os.Getenv("DEVOPSTIC_DATABASE_PASSWORD")
+	databaseName := os.Getenv("DEVOPSTIC_DATABASE_NAME")
 	if databaseName == "" {
 		databaseName = "devopstic"
 	}

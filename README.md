@@ -59,11 +59,20 @@ A postgres database with a database and a user authorized to create tables.
 #### API
 
 The api requires the following environment variables:
-- DATABASE_HOST: default: localhost
-- DATABASE_PORT: default: 5432
-- DATABASE_USER
-- DATABASE_PASSWORD
-- DATABASE_NAME: default: devopstic
+- DEVOPSTIC_DATABASE_HOST: default: localhost
+- DEVOPSTIC_DATABASE_PORT: default: 5432
+- DEVOPSTIC_DATABASE_USER
+- DEVOPSTIC_DATABASE_PASSWORD
+- DEVOPSTIC_DATABASE_NAME: default: devopstic
+
+For user authentication, 2 options:
+- Environement variables:
+  
+  DEVOPSTIC_USERNAME and DEVOPSTIC_PASSWORD can be used to define the credentials that will allow to retrieve a token
+  
+- User table in the database: 
+
+  TODO: implement the logic
 
 ## Documentation
 - [Domain](doc/domain.md)
