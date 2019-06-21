@@ -92,7 +92,7 @@ func TestCommitUpdate(t *testing.T) {
 			PipelineId: newCommit.PipelineId,
 			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(event)
+		commit, err = commitService.HandleEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_APPROVED, commit.State)
 		assert.True(t, commit.ReviewLeadTime > 0, "review lead time is > 0")
@@ -102,7 +102,7 @@ func TestCommitUpdate(t *testing.T) {
 	t.Run("should update state from submitted to approved", func(t *testing.T) {
 		newCommit := testCommit
 		newCommit.CommitId = uuid.New().String()
-		newCommit.CommitTime = time.Now().Add(mult * time.Minute)
+		newCommit.CommitTime = time.Now().Add(2 * mult * time.Minute)
 		commit, err := commitService.CreateCommit(newCommit)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_COMMITTED, commit.State)
@@ -111,9 +111,9 @@ func TestCommitUpdate(t *testing.T) {
 			Type:       entities.EVENT_SUBMIT,
 			CommitId:   newCommit.CommitId,
 			PipelineId: newCommit.PipelineId,
-			Timestamp:  time.Now(),
+			Timestamp:  time.Now().Add(mult * time.Minute),
 		}
-		commit, err = commitService.UpdateCommitByEvent(event)
+		commit, err = commitService.HandleEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_SUBMITTED, commit.State)
 		event = entities.Event{
@@ -123,7 +123,7 @@ func TestCommitUpdate(t *testing.T) {
 			PipelineId: newCommit.PipelineId,
 			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(event)
+		commit, err = commitService.HandleEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_APPROVED, commit.State)
 		assert.True(t, commit.ReviewLeadTime > 0, "review lead time is > 0")
@@ -144,7 +144,7 @@ func TestCommitUpdate(t *testing.T) {
 			PipelineId: newCommit.PipelineId,
 			Timestamp:  time.Now(),
 		}
-		commit, err = commitService.UpdateCommitByEvent(event)
+		commit, err = commitService.HandleEvent(event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_DEPLOYED, commit.State)
 		assert.True(t, commit.DeploymentLeadTime > 0, "deployment lead time is > 0")

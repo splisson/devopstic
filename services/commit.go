@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"github.com/prometheus/common/log"
 	"github.com/splisson/devopstic/entities"
 	"github.com/splisson/devopstic/persistence"
 )
@@ -25,20 +24,56 @@ func NewCommitService(commitStore persistence.CommitStoreInterface) *CommitServi
 	return service
 }
 
+func updateLeadTimes(commit *entities.Commit) {
+	if commit.ApprovalTime.Unix() >= commit.SubmitTime.Unix() {
+		commit.ReviewLeadTime = commit.ApprovalTime.Unix() - commit.SubmitTime.Unix()
+	} else {
+		commit.ReviewLeadTime = 0
+	}
+	if commit.DeploymentTime.Unix() >= commit.ApprovalTime.Unix() {
+		commit.DeploymentLeadTime = commit.DeploymentTime.Unix() - commit.ApprovalTime.Unix()
+	} else {
+		commit.DeploymentLeadTime = 0
+	}
+	commit.TotalLeadTime = commit.ReviewLeadTime + commit.DeploymentLeadTime
+}
+
 func (s *CommitService) HandleEvent(event entities.Event) (*entities.Commit, error) {
-	if event.Type == entities.EVENT_COMMIT {
-		// Create commit
+	// If commit exist for same commit, return error
+	_, err := s.commitStore.GetCommitByPipelineIdAndCommitId(event.PipelineId, event.CommitId)
+	if err == nil {
+		// Found => Update
+		// Update commit
+		return s.UpdateCommitByEvent(event)
+	} else {
+		// Create commit with committed state by default
 		newCommit := entities.Commit{
 			PipelineId: event.PipelineId,
 			CommitId:   event.CommitId,
-			State:      entities.COMMIT_STATE_COMMITTED,
 			CommitTime: event.Timestamp,
 		}
+		newCommit.State = entities.COMMIT_STATE_COMMITTED
+		// Only successful event set time and state on commit
+		if event.Status == entities.STATUS_SUCCESS {
+			switch event.Type {
+			case entities.EVENT_SUBMIT:
+				newCommit.SubmitTime = event.Timestamp
+				newCommit.State = entities.COMMIT_STATE_SUBMITTED
+				break
+			case entities.EVENT_APPROVE:
+				newCommit.SubmitTime = event.Timestamp
+				newCommit.ApprovalTime = event.Timestamp
+				newCommit.State = entities.COMMIT_STATE_APPROVED
+				break
+			case entities.EVENT_DEPLOY:
+				newCommit.SubmitTime = event.Timestamp
+				newCommit.ApprovalTime = event.Timestamp
+				newCommit.DeploymentTime = event.Timestamp
+				newCommit.State = entities.COMMIT_STATE_DEPLOYED
+				break
+			}
+		}
 		return s.CreateCommit(newCommit)
-
-	} else {
-		// Update commit
-		return s.UpdateCommitByEvent(event)
 	}
 }
 
@@ -51,14 +86,13 @@ func (s *CommitService) GetCommitByPipelineIdAndCommitId(pipelineId string, comm
 }
 
 func (s *CommitService) CreateCommit(commit entities.Commit) (*entities.Commit, error) {
-	// If commit exist for same commit, return error
 	_, err := s.commitStore.GetCommitByPipelineIdAndCommitId(commit.PipelineId, commit.CommitId)
 	if err == nil {
-		// Found
-		log.Info("found commit with same commit_id and pipeline_id")
-		return nil, errors.New("commit already exist for this commit and pipeline id")
+		return nil, errors.New("commit with same pipeline_id and commit_id already exists")
 	}
-	commit.State = entities.COMMIT_STATE_COMMITTED
+	if commit.State == "" {
+		commit.State = entities.COMMIT_STATE_COMMITTED
+	}
 	return s.commitStore.CreateCommit(commit)
 }
 
@@ -92,8 +126,7 @@ func (s *CommitService) UpdateCommitByEvent(event entities.Event) (*entities.Com
 					// Approved: update review lead time
 					commit.ApprovalTime = event.Timestamp
 					commit.State = entities.COMMIT_STATE_APPROVED
-					commit.ReviewLeadTime = commit.ApprovalTime.Unix() - commit.SubmitTime.Unix()
-					commit.TotalLeadTime = commit.ReviewLeadTime
+					updateLeadTimes(commit)
 				}
 			}
 		} else if event.Type == entities.EVENT_DEPLOY {
@@ -108,8 +141,7 @@ func (s *CommitService) UpdateCommitByEvent(event entities.Event) (*entities.Com
 				commit.State = entities.COMMIT_STATE_DEPLOYED
 				// Update DeploymentLeadTime
 				commit.DeploymentTime = event.Timestamp
-				commit.DeploymentLeadTime = commit.DeploymentTime.Unix() - commit.ApprovalTime.Unix()
-				commit.TotalLeadTime = commit.ReviewLeadTime + commit.DeploymentLeadTime
+				updateLeadTimes(commit)
 			}
 		}
 		return s.commitStore.UpdateCommit(*commit)
