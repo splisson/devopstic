@@ -18,7 +18,8 @@ func main() {
 	incidentService := services.NewIncidentService(incidentStore)
 	commitHandlers := handlers.NewCommitHandlers(commitService)
 	eventHandlers := handlers.NewEventHandlers(eventService, commitService, incidentService)
-	r := devopstic.BuildEngine(commitHandlers, eventHandlers)
+	githubEventHandlers := handlers.NewGithubEventHandlers(eventService, commitService, incidentService)
+	r := devopstic.BuildEngine(commitHandlers, eventHandlers, githubEventHandlers)
 	//fmt.Printf("Starting opstic server\n")
 	err := r.Run()
 	if err != nil {

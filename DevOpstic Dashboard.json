@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_OPSTIC",
-      "label": "opstic",
+      "name": "DS_DEVOPSTIC",
+      "label": "devopstic",
       "description": "",
       "type": "datasource",
       "pluginId": "postgres",
@@ -63,7 +63,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#299c46"
           ],
-          "datasource": "${DS_OPSTIC}",
+          "datasource": "${DS_DEVOPSTIC}",
           "decimals": 2,
           "format": "none",
           "gauge": {
@@ -130,7 +130,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2)\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND environment = $env\n",
+              "rawSql": "SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2)\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND environment = $env\n  AND pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -172,7 +172,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "${DS_OPSTIC}",
+          "datasource": "${DS_DEVOPSTIC}",
           "decimals": 2,
           "format": "percentunit",
           "gauge": {
@@ -239,7 +239,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT failure_count/(success_count+failure_count)\nFROM ( SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as success_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'success'\n  AND environment = $env\n) AS success,\n(SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as failure_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'failure'\n  AND environment = $env\n) as failure\n",
+              "rawSql": "SELECT failure_count/(success_count+failure_count)\nFROM ( SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as success_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'success'\n  AND environment = $env\n  AND pipeline_id=$pipeline\n) AS success,\n(SELECT\n  ROUND(60*60*24*count(*)/($__unixEpochTo()-$__unixEpochFrom())::numeric,2) as failure_count\nFROM\n  events\nWHERE\n  $__timeFilter(timestamp) \n  AND type = 'deploy'\n  AND status = 'failure'\n  AND environment = $env\n  AND pipeline_id=$pipeline\n) as failure",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -281,7 +281,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "${DS_OPSTIC}",
+          "datasource": "${DS_DEVOPSTIC}",
           "decimals": 0,
           "format": "m",
           "gauge": {
@@ -348,7 +348,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  avg(time_to_restore/60)\nFROM\n  incidents\nWHERE\n  $__timeFilter(resolution_time) \n  AND state = 'resolved'\n  AND environment = $env\n  AND time_to_restore IS NOT NULL\n",
+              "rawSql": "SELECT\n  avg(time_to_restore/60)\nFROM\n  incidents\nWHERE\n  $__timeFilter(resolution_time) \n  AND state = 'resolved'\n  AND environment = $env\n  AND time_to_restore IS NOT NULL\n  AND pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -402,8 +402,8 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "${DS_OPSTIC}",
-          "decimals": null,
+          "datasource": "${DS_DEVOPSTIC}",
+          "decimals": 1,
           "format": "m",
           "gauge": {
             "maxValue": 90,
@@ -469,7 +469,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.total_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\n",
+              "rawSql": "SELECT\n  AVG(commits.total_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\nAND events.pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -511,7 +511,7 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "${DS_OPSTIC}",
+          "datasource": "${DS_DEVOPSTIC}",
           "decimals": null,
           "format": "m",
           "gauge": {
@@ -578,7 +578,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.review_lead_time/60)\nFROM\n  commits\nWHERE\n  $__timeFilter(commits.approval_time) \nAND (commits.state = 'approved' OR commits.state = 'deployed')\n\n",
+              "rawSql": "SELECT\n  AVG(commits.review_lead_time/60)\nFROM\n  commits\nWHERE\n  $__timeFilter(commits.approval_time) \nAND (commits.state = 'approved' OR commits.state = 'deployed')\nAND pipeline_id=$pipeline\n\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -620,8 +620,8 @@
             "rgba(237, 129, 40, 0.89)",
             "#d44a3a"
           ],
-          "datasource": "${DS_OPSTIC}",
-          "decimals": null,
+          "datasource": "${DS_DEVOPSTIC}",
+          "decimals": 1,
           "format": "m",
           "gauge": {
             "maxValue": 90,
@@ -687,7 +687,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.deployment_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\n",
+              "rawSql": "SELECT\n  AVG(commits.deployment_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\nAND events.pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -737,7 +737,27 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_OPSTIC}",
+        "datasource": "${DS_DEVOPSTIC}",
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "pipeline",
+        "options": [],
+        "query": "select distinct(pipeline_id) from events where environment=$env",
+        "refresh": 1,
+        "regex": "",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {},
+        "datasource": "${DS_DEVOPSTIC}",
         "hide": 0,
         "includeAll": false,
         "label": null,
@@ -787,5 +807,5 @@
   },
   "timezone": "",
   "title": "DevOpstic Dashboard",
-  "version": 25
+  "version": 6
 }
