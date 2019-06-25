@@ -77,6 +77,11 @@ func decodeGithubEvent(c *gin.Context) (*entities.Event, error) {
 	name := c.GetHeader("X-Github-Event")
 
 	switch name {
+	case "ping":
+		newEvent = entities.Event{
+			Type: "ping",
+		}
+		break
 	case "push":
 		eventValues := representations.GithubPushEvent{}
 		err = c.Bind(&eventValues)
@@ -107,6 +112,11 @@ func (e *GithubEventHandlers) PostGithubEvents(c *gin.Context) {
 	newEvent, bindErr := decodeGithubEvent(c)
 	if bindErr != nil {
 		c.JSON(400, gin.H{"error": bindErr})
+		return
+	}
+
+	if newEvent.Type == "ping" {
+		c.JSON(200, "ok")
 		return
 	}
 
