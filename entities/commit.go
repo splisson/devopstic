@@ -16,6 +16,7 @@ type Commit struct {
 	TotalLeadTime      int64  // ReviewLeadTime + DeploymentLeadTime
 	PipelineId         string // external unique id of the component/pipeline tracked
 	CommitId           string // external unique id of the commit
+	PullRequestId      int64
 }
 
 const (

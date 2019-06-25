@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/log"
 	"github.com/splisson/devopstic/entities"
@@ -23,34 +24,93 @@ func NewGithubEventHandlers(eventService services.EventServiceInterface, commitS
 	return handler
 }
 
-func representationGithubEventToEvent(representation representations.GithubEvent) entities.Event {
+func representationGithubPushEventToEvent(representation representations.GithubPushEvent) entities.Event {
 	timestamp := time.Now()
-	log.Infof("received github event %s %s $s", representation.Name, representation.Head, representation.Repository.Name)
+	log.Infof("received github event %s %s $s", representation.After, representation.Repository.Name, representation.Repository.Name)
 	event := entities.Event{
-		PipelineId:  representation.Repository.Name,
-		CommitId:    representation.Head,
-		IncidentId:  "",
-		Environment: "",
-		Status:      "success",
-		Type:        entities.EVENT_COMMIT,
-		Timestamp:   timestamp,
-	}
-	if representation.Name == "push" {
-		event.Type = entities.EVENT_COMMIT
+		PipelineId:    representation.Repository.Name,
+		CommitId:      representation.After,
+		PullRequestId: 0,
+		IncidentId:    "",
+		Environment:   "",
+		Status:        "success",
+		Type:          entities.EVENT_COMMIT,
+		Timestamp:     timestamp,
 	}
 
 	return event
 }
 
-func (e *GithubEventHandlers) PostGithubEvents(c *gin.Context) {
-	var eventValues representations.GithubEvent
+func representationGithubPullRequestEventToEvent(representation representations.GithubPullRequestEvent) entities.Event {
+	timestamp := time.Now()
+	log.Infof("received github event %s %s $s", representation.PullRequest.MergeCommitSha, representation.Repository.Name, representation.Repository.Name)
+	event := entities.Event{
+		PipelineId:    representation.Repository.Name,
+		PullRequestId: representation.PullRequest.Id,
+		IncidentId:    "",
+		Environment:   "",
+		Status:        "success",
+		Type:          entities.EVENT_SUBMIT,
+		Timestamp:     timestamp,
+	}
+	if representation.Action == "opened" {
+		event.Type = entities.EVENT_SUBMIT
+		event.CommitId = representation.PullRequest.Head.Sha
+	} else if representation.Action == "closed" {
+		event.CommitId = representation.PullRequest.MergeCommitSha
+		if representation.PullRequest.Merged {
+			// Closing and merging PR = Approve
+			event.Type = entities.EVENT_APPROVE
+		} else {
+			// Closing PR but not merging it
+			event.Type = entities.EVENT_SUBMIT
+		}
+	}
+	return event
+}
+
+func decodeGithubEvent(c *gin.Context) (*entities.Event, error) {
 	var err error
-	if bindErr := c.Bind(&eventValues); bindErr != nil {
+	newEvent := entities.Event{}
+
+	// Extract name of event
+	name := c.GetHeader("X-Github-Event")
+
+	switch name {
+	case "push":
+		eventValues := representations.GithubPushEvent{}
+		err = c.Bind(&eventValues)
+		if err != nil {
+			return nil, err
+		}
+		newEvent = representationGithubPushEventToEvent(eventValues)
+		break
+
+	case "pull_request":
+		eventValues := representations.GithubPullRequestEvent{}
+		err = c.Bind(&eventValues)
+		if err != nil {
+			return nil, err
+		}
+		newEvent = representationGithubPullRequestEventToEvent(eventValues)
+		break
+	default:
+		return nil, errors.New("unsupported event")
+
+	}
+
+	return &newEvent, err
+}
+
+func (e *GithubEventHandlers) PostGithubEvents(c *gin.Context) {
+
+	newEvent, bindErr := decodeGithubEvent(c)
+	if bindErr != nil {
 		c.JSON(400, gin.H{"error": bindErr})
 		return
 	}
-	newEvent := representationGithubEventToEvent(eventValues)
-	event, err := e.eventService.CreateEvent(newEvent)
+
+	event, err := e.eventService.CreateEvent(*newEvent)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

@@ -11,7 +11,7 @@ type CommitServiceInterface interface {
 	CreateCommit(event entities.Commit) (*entities.Commit, error)
 	GetCommits() ([]entities.Commit, error)
 	GetCommitByPipelineIdAndCommitId(pipelineId string, commitId string) (*entities.Commit, error)
-	UpdateCommitByEvent(event entities.Event) (*entities.Commit, error)
+	UpdateCommitByEvent(commit entities.Commit, event entities.Event) (*entities.Commit, error)
 }
 
 type CommitService struct {
@@ -39,18 +39,27 @@ func updateLeadTimes(commit *entities.Commit) {
 }
 
 func (s *CommitService) HandleEvent(event entities.Event) (*entities.Commit, error) {
-	// If commit exist for same commit, return error
-	_, err := s.commitStore.GetCommitByPipelineIdAndCommitId(event.PipelineId, event.CommitId)
+	var err error = nil
+	var commit *entities.Commit
+	// PullRequest related
+	if event.PullRequestId > 0 {
+		commit, err = s.commitStore.GetCommitByPipelineIdAndPullRequestId(event.PipelineId, event.PullRequestId)
+	}
+	// Find by commitId
+	if err != nil || event.PullRequestId <= 0 {
+		commit, err = s.commitStore.GetCommitByPipelineIdAndCommitId(event.PipelineId, event.CommitId)
+	}
 	if err == nil {
 		// Found => Update
 		// Update commit
-		return s.UpdateCommitByEvent(event)
+		return s.UpdateCommitByEvent(*commit, event)
 	} else {
 		// Create commit with committed state by default
 		newCommit := entities.Commit{
-			PipelineId: event.PipelineId,
-			CommitId:   event.CommitId,
-			CommitTime: event.Timestamp,
+			PipelineId:    event.PipelineId,
+			CommitId:      event.CommitId,
+			CommitTime:    event.Timestamp,
+			PullRequestId: event.PullRequestId,
 		}
 		newCommit.State = entities.COMMIT_STATE_COMMITTED
 		// Only successful event set time and state on commit
@@ -96,54 +105,54 @@ func (s *CommitService) CreateCommit(commit entities.Commit) (*entities.Commit, 
 	return s.commitStore.CreateCommit(commit)
 }
 
-func (s *CommitService) UpdateCommitByEvent(event entities.Event) (*entities.Commit, error) {
-	commit, err := s.commitStore.GetCommitByPipelineIdAndCommitId(event.PipelineId, event.CommitId)
-	if err != nil {
-		return nil, errors.New("no commit matching to update")
-	} else {
-		if event.Type == entities.EVENT_SUBMIT {
-			if event.Status == entities.STATUS_SUCCESS {
+func (s *CommitService) UpdateCommitByEvent(commit entities.Commit, event entities.Event) (*entities.Commit, error) {
 
-				if commit.State == entities.COMMIT_STATE_SUBMITTED {
-					// NOOP
-					return commit, nil
-				}
-				if commit.State == entities.COMMIT_STATE_COMMITTED {
-					// Submitted
-					commit.SubmitTime = event.Timestamp
-					commit.State = entities.COMMIT_STATE_SUBMITTED
-				}
-			}
-		} else if event.Type == entities.EVENT_APPROVE {
-			if event.Status == entities.STATUS_SUCCESS {
+	if event.Type == entities.EVENT_SUBMIT {
+		if event.Status == entities.STATUS_SUCCESS {
 
-				if commit.State == entities.COMMIT_STATE_COMMITTED {
-					// Bypass submission
-					commit.SubmitTime = commit.CommitTime
-				}
-				if commit.State == entities.COMMIT_STATE_COMMITTED ||
-					commit.State == entities.COMMIT_STATE_SUBMITTED {
-					// Approved: update review lead time
-					commit.ApprovalTime = event.Timestamp
-					commit.State = entities.COMMIT_STATE_APPROVED
-					updateLeadTimes(commit)
-				}
+			if commit.State == entities.COMMIT_STATE_SUBMITTED {
+				// NOOP
+				return &commit, nil
 			}
-		} else if event.Type == entities.EVENT_DEPLOY {
-			if event.Status == entities.STATUS_SUCCESS {
-				if commit.State == entities.COMMIT_STATE_COMMITTED ||
-					commit.State == entities.COMMIT_STATE_SUBMITTED {
-					// Bypass submission and approval as if they happened at creation time of the commit
-					commit.SubmitTime = commit.CommitTime
-					commit.ApprovalTime = commit.CommitTime
-				}
-				// Update state
-				commit.State = entities.COMMIT_STATE_DEPLOYED
-				// Update DeploymentLeadTime
-				commit.DeploymentTime = event.Timestamp
-				updateLeadTimes(commit)
+			if commit.State == entities.COMMIT_STATE_COMMITTED {
+				// Submitted
+				commit.PullRequestId = event.PullRequestId
+				commit.SubmitTime = event.Timestamp
+				commit.State = entities.COMMIT_STATE_SUBMITTED
 			}
 		}
-		return s.commitStore.UpdateCommit(*commit)
+	} else if event.Type == entities.EVENT_APPROVE {
+		if event.Status == entities.STATUS_SUCCESS {
+
+			if commit.State == entities.COMMIT_STATE_COMMITTED {
+				// Bypass submission
+				commit.SubmitTime = commit.CommitTime
+			}
+			if commit.State == entities.COMMIT_STATE_COMMITTED ||
+				commit.State == entities.COMMIT_STATE_SUBMITTED {
+				// Approved: update review lead time
+				commit.ApprovalTime = event.Timestamp
+				commit.State = entities.COMMIT_STATE_APPROVED
+				// update commit Id with potentially the merge sha from the pull request
+				commit.CommitId = event.CommitId
+				updateLeadTimes(&commit)
+			}
+		}
+	} else if event.Type == entities.EVENT_DEPLOY {
+		if event.Status == entities.STATUS_SUCCESS {
+			if commit.State == entities.COMMIT_STATE_COMMITTED ||
+				commit.State == entities.COMMIT_STATE_SUBMITTED {
+				// Bypass submission and approval as if they happened at creation time of the commit
+				commit.SubmitTime = commit.CommitTime
+				commit.ApprovalTime = commit.CommitTime
+			}
+			// Update state
+			commit.State = entities.COMMIT_STATE_DEPLOYED
+			// Update DeploymentLeadTime
+			commit.DeploymentTime = event.Timestamp
+			updateLeadTimes(&commit)
+		}
 	}
+	return s.commitStore.UpdateCommit(commit)
+
 }

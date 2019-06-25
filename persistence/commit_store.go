@@ -9,6 +9,7 @@ import (
 type CommitStoreInterface interface {
 	GetCommits() ([]entities.Commit, error)
 	GetCommitByPipelineIdAndCommitId(pipelineId string, commitId string) (*entities.Commit, error)
+	GetCommitByPipelineIdAndPullRequestId(pipelineId string, pullRequestId int64) (*entities.Commit, error)
 	CreateCommit(event entities.Commit) (*entities.Commit, error)
 	UpdateCommit(event entities.Commit) (*entities.Commit, error)
 }
@@ -34,6 +35,13 @@ func (s *CommitStoreDB) GetCommits() ([]entities.Commit, error) {
 func (s *CommitStoreDB) GetCommitByPipelineIdAndCommitId(pipelineId string, commitId string) (*entities.Commit, error) {
 	commit := entities.Commit{}
 	db := s.db.Table("commits").Select("*").Where("pipeline_id  = ? AND commit_id = ?", pipelineId, commitId)
+	db = db.Find(&commit)
+	return &commit, db.Error
+}
+
+func (s *CommitStoreDB) GetCommitByPipelineIdAndPullRequestId(pipelineId string, pullRequestId int64) (*entities.Commit, error) {
+	commit := entities.Commit{}
+	db := s.db.Table("commits").Select("*").Where("pipeline_id  = ? AND pull_request_id = ?", pipelineId, pullRequestId)
 	db = db.Find(&commit)
 	return &commit, db.Error
 }

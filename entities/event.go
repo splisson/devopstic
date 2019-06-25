@@ -4,13 +4,14 @@ import "time"
 
 type Event struct {
 	Model
-	PipelineId  string
-	CommitId    string
-	IncidentId  string
-	Type        string // Event type
-	Status      string // success or failure
-	Timestamp   time.Time
-	Environment string
+	PipelineId    string
+	CommitId      string
+	PullRequestId int64
+	IncidentId    string
+	Type          string // Event type
+	Status        string // success or failure
+	Timestamp     time.Time
+	Environment   string
 }
 
 const (

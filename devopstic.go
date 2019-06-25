@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/splisson/devopstic/handlers"
 	"github.com/splisson/devopstic/middleware"
+	"os"
 )
 
 func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handlers.EventHandlers, githubEventHandlers *handlers.GithubEventHandlers) *gin.Engine {
@@ -25,6 +26,9 @@ func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handler
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{})
 	})
+	r.POST("/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{})
+	})
 	r.POST("/tokens", authMiddleware.LoginHandler)
 
 	auth := r.Group("/")
@@ -33,9 +37,19 @@ func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handler
 		auth.GET("/commits", commitHandlers.GetCommits)
 		auth.GET("/events", eventHandlers.GetEvents)
 		auth.POST("/events", eventHandlers.PostEvents)
-		auth.POST("/github_events", githubEventHandlers.PostGithubEvents)
 		auth.POST("/webhook/:token/events", eventHandlers.PostEvents)
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
+	}
+
+	secret := os.Getenv("DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
+	if len(secret) <= 0 {
+		panic("missing github webhook secret env var: DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
+	}
+	githubAuthMiddleware := middleware.NewGithubAuthMiddleware(secret)
+	githubAuth := r.Group("/github")
+	githubAuth.Use(githubAuthMiddleware.MiddlewareFunc())
+	{
+		githubAuth.POST("/events", githubEventHandlers.PostGithubEvents)
 	}
 
 	return r

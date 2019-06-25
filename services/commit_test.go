@@ -73,7 +73,7 @@ func TestCommitUpdate(t *testing.T) {
 			PipelineId: newCommit.PipelineId,
 			Timestamp:  time.Now(),
 		}
-		commit, err := commitService.UpdateCommitByEvent(event)
+		commit, err := commitService.UpdateCommitByEvent(newCommit, event)
 		assert.Nil(t, err, "no error")
 		assert.Equal(t, entities.COMMIT_STATE_SUBMITTED, commit.State)
 	})

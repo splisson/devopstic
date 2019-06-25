@@ -41,6 +41,15 @@ func (s *CommitStoreFake) GetCommitByPipelineIdAndCommitId(pipelineId string, co
 	return nil, errors.New("no commit found that matches criteria")
 }
 
+func (s *CommitStoreFake) GetCommitByPipelineIdAndPullRequestId(pipelineId string, pullRequestId int64) (*entities.Commit, error) {
+	for _, commit := range s.commits {
+		if commit.PullRequestId == pullRequestId && commit.PipelineId == pipelineId {
+			return &commit, nil
+		}
+	}
+	return nil, errors.New("no commit found that matches criteria")
+}
+
 func (s *CommitStoreFake) CreateCommit(commit entities.Commit) (*entities.Commit, error) {
 	commit.ID = uuid.New().String()
 	s.commits = append(s.commits, commit)
