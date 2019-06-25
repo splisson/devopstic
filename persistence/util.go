@@ -15,6 +15,10 @@ func CreateTables(db *gorm.DB) {
 	db.CreateTable(&entities.Event{})
 	db.CreateTable(&entities.Commit{})
 	db.CreateTable(&entities.Incident{})
+	db.AutoMigrate(&entities.User{})
+	db.AutoMigrate(&entities.Event{})
+	db.AutoMigrate(&entities.Commit{})
+	db.AutoMigrate(&entities.Incident{})
 }
 
 func NewSQLiteConnection(dbId string) (*gorm.DB, string) {
