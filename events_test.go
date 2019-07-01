@@ -75,18 +75,18 @@ func authenticate(req *http.Request) {
 
 func TestMain(m *testing.M) {
 	db := persistence.NewPostgresqlConnectionLocalhost()
-	db.AutoMigrate(&entities.Event{})
-	db.AutoMigrate(&entities.Commit{})
-	db.AutoMigrate(&entities.Incident{})
+	persistence.CreateTables(db)
 	commitStore := persistence.NewCommitStoreDB(db)
 	eventStore := persistence.NewEventStoreDB(db)
 	incidentStore := persistence.NewIncidentStoreDB(db)
+	deploymentStore := persistence.NewDeploymentStoreDB(db)
 	eventService := services.NewEventService(eventStore)
-	commitService := services.NewCommitService(commitStore)
+	commitService := services.NewCommitService(commitStore, deploymentStore)
 	incidentService := services.NewIncidentService(incidentStore)
 	commitHandlers := handlers.NewCommitHandlers(commitService)
 	eventHandlers := handlers.NewEventHandlers(eventService, commitService, incidentService)
-	r = BuildEngine(commitHandlers, eventHandlers)
+	githubHandlers := handlers.NewGithubEventHandlers(eventService, commitService, incidentService)
+	r = BuildEngine(commitHandlers, eventHandlers, githubHandlers)
 	var err error
 	token, err = Login()
 	if err != nil {
@@ -210,7 +210,7 @@ func TestPostEvents(t *testing.T) {
 		message := map[string]interface{}{
 			"type":        entities.EVENT_COMMIT,
 			"status":      entities.STATUS_SUCCESS,
-			"incident_id": uuid.New().String(),
+			"commit_id":   uuid.New().String(),
 			"pipeline_id": PIPELINE_ID,
 			"environment": ENVIRONMENT,
 			"timestamp":   time.Now().Add(-20 * time.Minute).Unix(), //.Format(time.RFC3339),

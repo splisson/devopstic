@@ -19,16 +19,13 @@ func NewCommitHandlers(commitService services.CommitServiceInterface) *CommitHan
 
 func commitToRepresentation(commit entities.Commit) representations.Commit {
 	return representations.Commit{
-		PipelineId:         commit.PipelineId,
-		CommitId:           commit.CommitId,
-		Id:                 commit.ID,
-		CommitTime:         commit.CommitTime.Unix(),
-		SubmitTime:         commit.SubmitTime.Unix(),
-		ApprovalTime:       commit.ApprovalTime.Unix(),
-		DeploymentTime:     commit.DeploymentTime.Unix(),
-		TotalLeadTime:      commit.TotalLeadTime,
-		DeploymentLeadTime: commit.DeploymentLeadTime,
-		ReviewLeadTime:     commit.ReviewLeadTime,
+		PipelineId:     commit.PipelineId,
+		CommitId:       commit.CommitId,
+		Id:             commit.ID,
+		CommitTime:     commit.CommitTime.Unix(),
+		SubmitTime:     commit.SubmitTime.Unix(),
+		ApprovalTime:   commit.ApprovalTime.Unix(),
+		ReviewLeadTime: commit.ReviewLeadTime,
 	}
 }
 

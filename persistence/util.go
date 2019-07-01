@@ -15,6 +15,8 @@ func CreateTables(db *gorm.DB) {
 	db.CreateTable(&entities.Event{})
 	db.CreateTable(&entities.Commit{})
 	db.CreateTable(&entities.Incident{})
+	db.CreateTable(&entities.Deployment{})
+	db.AutoMigrate(&entities.Deployment{})
 	db.AutoMigrate(&entities.User{})
 	db.AutoMigrate(&entities.Event{})
 	db.AutoMigrate(&entities.Commit{})
@@ -43,7 +45,7 @@ func CreatePostgresDBConnection(url string, port string, username string, passwo
 }
 
 func NewPostgresqlConnectionLocalhost() *gorm.DB {
-	return CreatePostgresDBConnection("localhost", "5432", os.Getenv("DATABASE_USER"), os.Getenv("DATABASE_PASSWORD"), "opstic")
+	return CreatePostgresDBConnection("localhost", "5432", os.Getenv("DATABASE_USER"), os.Getenv("DATABASE_PASSWORD"), os.Getenv("DATABASE_NAME"))
 }
 
 func NewPostgresqlConnectionWithEnv() *gorm.DB {

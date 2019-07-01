@@ -52,7 +52,7 @@ func (e *EventHandlers) PostEvents(c *gin.Context) {
 	if event.Type == entities.EVENT_INCIDENT_STATUS_CHANGE {
 		_, err = e.incidentService.HandleEvent(*event)
 	} else {
-		_, err = e.commitService.HandleEvent(*event)
+		_, _, err = e.commitService.HandleEvent(*event)
 	}
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
