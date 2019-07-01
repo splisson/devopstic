@@ -536,7 +536,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.total_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\nAND events.pipeline_id=$pipeline\n",
+              "rawSql": "SELECT\n  AVG((c.review_lead_time+d.lead_time)/60)\nFROM\n  commits as c\nright join deployments as d\non c.commit_id = d.commit_id\nAND c.pipeline_id = d.pipeline_id\nWHERE\n  $__timeFilter(d.timestamp) \nAND d.environment = $env\nAND c.pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -754,7 +754,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.deployment_lead_time/60)\nFROM\n  events\nleft join commits\non events.commit_id = commits.commit_id\nAND events.pipeline_id = commits.pipeline_id\nWHERE\n  $__timeFilter(commits.deployment_time) \n  AND commits.state = 'deployed'\nAND events.environment = $env\nAND events.pipeline_id=$pipeline\n",
+              "rawSql": "SELECT\n  AVG(lead_time/60)\nFROM\n  deployments\n  join commits on commits.commit_id = deployments.commit_id\nWHERE\n  $__timeFilter(deployments.timestamp) \nAND deployments.environment = $env\nAND commits.pipeline_id=$pipeline\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -902,11 +902,70 @@
             {
               "alias": "",
               "format": "table",
-              "rawSql": "SELECT  commit_time, commit_id, pull_request_id, state, (total_lead_time/60) as total_lead_time, (review_lead_time/60) as review_lead_time, (deployment_lead_time/60) as deployment_lead_time\nfrom commits\nwhere pipeline_id=$pipeline\norder by commit_time desc\nlimit 5",
+              "rawSql": "SELECT  commit_time, c.commit_id, pull_request_id, state, ((review_lead_time+d.lead_time)/60) as total_lead_time, (review_lead_time/60) as review_lead_time, (d.lead_time/60) as deployment_lead_time\nfrom commits as c\nleft join deployments as d on d.commit_id = c.commit_id\nwhere c.pipeline_id=$pipeline\norder by c.commit_time desc",
               "refId": "A"
             }
           ],
           "title": "Commits",
+          "transform": "table",
+          "type": "table"
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Data",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [
+        {
+          "columns": [],
+          "datasource": "${DS_DEVOPSTIC}",
+          "fontSize": "100%",
+          "id": 14,
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 12,
+          "styles": [
+            {
+              "alias": "Time",
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "date"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "decimals": 2,
+              "pattern": "/.*/",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "alias": "",
+              "format": "table",
+              "rawSql": "SELECT\n  *\nFROM\n  deployments\n  \nWHERE\n  $__timeFilter(deployments.timestamp) \nAND deployments.environment = $env\n",
+              "refId": "A"
+            }
+          ],
+          "title": "Panel Title",
           "transform": "table",
           "type": "table"
         }
@@ -967,8 +1026,8 @@
     ]
   },
   "time": {
-    "from": "now/w",
-    "to": "now/w"
+    "from": "now/M",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -997,5 +1056,5 @@
   },
   "timezone": "",
   "title": "DevOpstic Dashboard",
-  "version": 14
+  "version": 21
 }
