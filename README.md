@@ -29,6 +29,8 @@ Number of deployment per period of time
 
 Time between a commit is submitted for review and the time it gets deployed.
 
+![lead_time](doc/lead_time.png "Lead Time")
+
 It can be decomposed in two:
 - **Review Lead Time**: from commit submitted for review to approved
 - **Deployment Lead Time**: from approved to deployed successfully
@@ -36,6 +38,8 @@ It can be decomposed in two:
 **Mean Time To Restore**
 
 Time between when an incident (failure of service) is detected to the time it is resolved.
+
+![time_to_restore](doc/time_to_restore.png "Time to restore")
 
 **Change Failure Rate**
 
