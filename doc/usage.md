@@ -23,6 +23,38 @@ Response:
 {"code":200,"expire":"2020-06-18T20:58:56-07:00","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI1MzkxMzYsImlkIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTU2MTAwMzEzNn0.FpPkK-5Tf-o_HAHjbf9FDc15w3Dq8jXPRco6ucR5vsk"}
 `
 
+## Create an event from Github Webhook
+This api creates an event based on a request sent from Github Webhook.
+
+#### POST /github/events
+#### Header
+```
+X-Github-Event: pull_request
+```
+#### Payload
+Partial view of the payload received, showing what is used by the service.
+```
+{  
+	"action":"open",
+	"pull_request": {
+	  "head": {
+	    "sha": "geloxl23l"
+	    },
+	  "id": 2132435,
+	  "number" : 232,
+	  "merged_commit_sha":"fdsdsf3r",
+	  "merged": true
+	},
+	"repository": {
+		"id":"",
+		"name":""
+	}
+}
+```
+**Description**
+
+See [Github documentation](https://developer.github.com/v3/activity/events/types/#pullrequestevent) 
+
 ## Create an event
 This api creates an event and the resources the event may require (commit, incident).
 It return the event created.

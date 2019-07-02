@@ -10,6 +10,8 @@ It's composed of:
 - a Postgres database for storage
 - a Grafana instance to display a dashboards
 
+The service supports its brand of events as well as GitHub webhook events (Pull Requests open and close)
+
 ## Metrics
 
 The goal is to be able to track the following metrics, as identified in "Accelerate, Building and Scaling High Performing Technology Organization" by N. Forsgren, J. Humble & G. Kim:
@@ -79,7 +81,8 @@ For user authentication, 2 options:
 
 ## Documentation
 - [Domain](doc/domain.md)
-- [Usage](doc/usage.md)
+- [Service API Usage](doc/usage.md)
+- [Database Model](doc/db_model.md)
 
 ## License
 - [MIT License](license.md)
