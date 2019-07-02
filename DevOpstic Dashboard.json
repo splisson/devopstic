@@ -58,7 +58,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": "80",
+      "height": 34,
       "panels": [
         {
           "columns": [],
@@ -105,7 +105,7 @@
               "refId": "A"
             }
           ],
-          "title": "Deployment",
+          "title": "Latest Deployments",
           "transform": "table",
           "type": "table"
         }
@@ -579,7 +579,7 @@
             "#d44a3a"
           ],
           "datasource": "${DS_DEVOPSTIC}",
-          "decimals": null,
+          "decimals": 1,
           "format": "m",
           "gauge": {
             "maxValue": 90,
@@ -645,7 +645,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(commits.review_lead_time/60)\nFROM\n  commits\nWHERE\n  $__timeFilter(commits.approval_time) \nAND (commits.state = 'approved' OR commits.state = 'deployed')\nAND pipeline_id=$pipeline\n\n",
+              "rawSql": "SELECT\n  AVG(commits.review_lead_time/60)\nFROM\n  commits\nWHERE\n  $__timeFilter(commits.approval_time) \nAND (commits.state = 'approved' OR commits.state = 'deployed')\nAND pipeline_id=$pipeline\nand review_lead_time is not null\nand review_lead_time > 0\n\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -754,7 +754,7 @@
               ],
               "orderByTime": "ASC",
               "policy": "default",
-              "rawSql": "SELECT\n  AVG(lead_time/60)\nFROM\n  deployments\n  join commits on commits.commit_id = deployments.commit_id\nWHERE\n  $__timeFilter(deployments.timestamp) \nAND deployments.environment = $env\nAND commits.pipeline_id=$pipeline\n",
+              "rawSql": "SELECT\n  AVG(lead_time/60)\nFROM\n  deployments\n  join commits on commits.commit_id = deployments.commit_id\nWHERE\n  $__timeFilter(deployments.timestamp) \nAND deployments.environment = $env\nAND commits.pipeline_id=$pipeline\nand lead_time is not null\nand lead_time > 0\n",
               "refId": "A",
               "resultFormat": "time_series",
               "select": [
@@ -797,7 +797,7 @@
     },
     {
       "collapse": false,
-      "height": 180,
+      "height": 327,
       "panels": [
         {
           "columns": [],
@@ -839,7 +839,7 @@
             {
               "alias": "",
               "format": "table",
-              "rawSql": "SELECT timestamp, type, commit_id, pull_request_id, status\nfrom events\nwhere pipeline_id=$pipeline\nand environment=$env",
+              "rawSql": "SELECT environment, timestamp, type, commit_id, pull_request_id, status\nfrom events\nwhere pipeline_id=$pipeline\nand $__timeFilter(timestamp)",
               "refId": "A"
             }
           ],
@@ -891,6 +891,36 @@
                 "rgba(237, 129, 40, 0.89)",
                 "rgba(50, 172, 45, 0.97)"
               ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "submit_time",
+              "thresholds": [],
+              "type": "date",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "approval_time",
+              "thresholds": [],
+              "type": "date",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
               "decimals": 2,
               "pattern": "/.*/",
               "thresholds": [],
@@ -902,7 +932,7 @@
             {
               "alias": "",
               "format": "table",
-              "rawSql": "SELECT  commit_time, c.commit_id, pull_request_id, state, ((review_lead_time+d.lead_time)/60) as total_lead_time, (review_lead_time/60) as review_lead_time, (d.lead_time/60) as deployment_lead_time\nfrom commits as c\nleft join deployments as d on d.commit_id = c.commit_id\nwhere c.pipeline_id=$pipeline\norder by c.commit_time desc",
+              "rawSql": "SELECT  c.commit_id, commit_time, submit_time, approval_time,pull_request_id, state, ((review_lead_time+d.lead_time)/60) as total_lead_time, (review_lead_time/60) as review_lead_time, (d.lead_time/60) as deployment_lead_time\nfrom commits as c\nleft join deployments as d on d.commit_id = c.commit_id\nwhere $__timeFilter(c.approval_time) \nAND c.pipeline_id=$pipeline\norder by c.commit_time desc",
               "refId": "A"
             }
           ],
@@ -927,6 +957,7 @@
           "datasource": "${DS_DEVOPSTIC}",
           "fontSize": "100%",
           "id": 14,
+          "links": [],
           "pageSize": null,
           "scroll": true,
           "showHeader": true,
@@ -962,6 +993,65 @@
               "alias": "",
               "format": "table",
               "rawSql": "SELECT\n  *\nFROM\n  deployments\n  \nWHERE\n  $__timeFilter(deployments.timestamp) \nAND deployments.environment = $env\n",
+              "refId": "A"
+            }
+          ],
+          "title": "Deployments",
+          "transform": "table",
+          "type": "table"
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [
+        {
+          "columns": [],
+          "datasource": "${DS_DEVOPSTIC}",
+          "fontSize": "100%",
+          "id": 15,
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 12,
+          "styles": [
+            {
+              "alias": "Time",
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "pattern": "Time",
+              "type": "date"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "decimals": 2,
+              "pattern": "/.*/",
+              "thresholds": [],
+              "type": "number",
+              "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "alias": "",
+              "format": "table",
+              "rawSql": "SELECT\n  review_lead_time/60, commit_id\nFROM\n  commits\nWHERE\n  $__timeFilter(commits.approval_time) \nAND (commits.state = 'approved' OR commits.state = 'deployed')\nAND pipeline_id=$pipeline\nand review_lead_time > 0",
               "refId": "A"
             }
           ],
@@ -1056,5 +1146,5 @@
   },
   "timezone": "",
   "title": "DevOpstic Dashboard",
-  "version": 21
+  "version": 25
 }
