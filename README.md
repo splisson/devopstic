@@ -87,6 +87,7 @@ For user authentication, 2 options:
 - [Domain](doc/domain.md)
 - [Service API Usage](doc/usage.md)
 - [Database Model](doc/db_model.md)
+- [How we use DevOpstic](doc/usecase.md)
 
 ## License
 - [MIT License](license.md)
