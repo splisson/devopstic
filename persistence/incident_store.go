@@ -8,7 +8,7 @@ import (
 
 type IncidentStoreInterface interface {
 	GetIncidents() ([]entities.Incident, error)
-	GetIncidentByIncidentId(incidentId string) (*entities.Incident, error)
+	GetLatestIncidentBySourceId(sourceId string, state string) (*entities.Incident, error)
 	GetLatestFailureIncidentByPipelineIdAndEnvironment(pipelineId string, environment string) (*entities.Incident, error)
 	CreateIncident(event entities.Incident) (*entities.Incident, error)
 	UpdateIncident(event entities.Incident) (*entities.Incident, error)
@@ -32,10 +32,10 @@ func (s *IncidentStoreDB) GetIncidents() ([]entities.Incident, error) {
 	return incidents, db.Error
 }
 
-func (s *IncidentStoreDB) GetIncidentByIncidentId(incidentId string) (*entities.Incident, error) {
+func (s *IncidentStoreDB) GetLatestIncidentBySourceId(sourceId string, state string) (*entities.Incident, error) {
 	incident := entities.Incident{}
-	db := s.db.Table("incidents").Select("*").Where("incident_id = ?", incidentId)
-	db = db.Find(&incident)
+	db := s.db.Table("incidents").Select("*").Where("source_id = ? AND state = ?", sourceId, state).Order("created_at DESC")
+	db = db.First(&incident)
 	return &incident, db.Error
 }
 

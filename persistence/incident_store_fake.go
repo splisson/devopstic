@@ -33,9 +33,9 @@ func (s *IncidentStoreFake) GetIncidents() ([]entities.Incident, error) {
 	return s.incidents, nil
 }
 
-func (s *IncidentStoreFake) GetIncidentByIncidentId(incidentId string) (*entities.Incident, error) {
+func (s *IncidentStoreFake) GetLatestIncidentBySourceId(sourceId string, state string) (*entities.Incident, error) {
 	for _, incident := range s.incidents {
-		if incident.IncidentId == incidentId {
+		if incident.IncidentId == sourceId {
 			return &incident, nil
 		}
 	}

@@ -30,6 +30,7 @@ func (s *IncidentService) HandleEvent(event entities.Event) (*entities.Incident,
 			IncidentId:  event.IncidentId,
 			PipelineId:  event.PipelineId,
 			Environment: event.Environment,
+			SourceId:    event.CommitId,
 		}
 		if event.Status == entities.STATUS_SUCCESS {
 			newIncident.State = entities.INCIDENT_STATE_RESOLVED
@@ -66,12 +67,19 @@ func (s *IncidentService) CreateOrUpdateIncident(incident entities.Incident) (*e
 	var existingIncident *entities.Incident = nil
 	var err error = nil
 	if len(incident.IncidentId) > 0 {
-		existingIncident, err = s.incidentStore.GetIncidentByIncidentId(incident.IncidentId)
+		existingIncident, err = s.incidentStore.GetLatestIncidentBySourceId(incident.SourceId, entities.INCIDENT_STATE_OPEN)
 	}
+
 	if err != nil || existingIncident == nil {
-		// No existing incident => create
-		log.Infof("no incident for that IncidentId => create")
-		return s.incidentStore.CreateIncident(incident)
+		// Only create if state is open
+		if incident.State == entities.INCIDENT_STATE_OPEN {
+			// No existing incident => create
+			log.Infof("no open incident for that SourceId => create")
+			return s.incidentStore.CreateIncident(incident)
+		} else {
+			// NOOP: don't create duplicate
+			return existingIncident, nil
+		}
 	} else {
 		// Existing incident so update based on status
 		if existingIncident.State == entities.INCIDENT_STATE_OPEN {

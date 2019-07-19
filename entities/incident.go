@@ -11,6 +11,7 @@ type Incident struct {
 	Environment    string // dev, qa, prod
 	TimeToRestore  int64
 	IncidentId     string
+	SourceId       string // Grouping id for incidents from the same source
 }
 
 const (
