@@ -6,7 +6,7 @@ TESTFLAGS :=
 LDFLAGS   := -w -s
 GOFLAGS   :=
 BINDIR    := $(CURDIR)/bin
-VERSION   := 0.3
+VERSION   := 0.4
 
 # Required for globs to work correctly
 SHELL=/bin/bash
