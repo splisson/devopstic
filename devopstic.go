@@ -2,12 +2,13 @@ package devopstic
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/common/log"
 	"github.com/splisson/devopstic/handlers"
 	"github.com/splisson/devopstic/middleware"
 	"os"
 )
 
-func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handlers.EventHandlers, githubEventHandlers *handlers.GithubEventHandlers) *gin.Engine {
+func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handlers.EventHandlers, githubEventHandlers *handlers.GithubEventHandlers, gitlabEventHandlers *handlers.GitlabEventHandlers, pagerDutyHandlers *handlers.PagerDutyHandlers) *gin.Engine {
 
 	r := gin.New()
 
@@ -39,16 +40,32 @@ func BuildEngine(commitHandlers *handlers.CommitHandlers, eventHandlers *handler
 		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 	}
 
-	secret := os.Getenv("DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
-	if len(secret) <= 0 {
-		panic("missing github webhook secret env var: DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
+	githubSecret := os.Getenv("DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
+	if len(githubSecret) <= 0 {
+		log.Warn("missing github webhook secret env var: DEVOPSTIC_GITHUB_WEBHOOK_SECRET")
+	} else {
+		githubAuthMiddleware := middleware.NewGithubAuthMiddleware(githubSecret)
+		githubAuth := r.Group("/github")
+		githubAuth.Use(githubAuthMiddleware.MiddlewareFunc())
+		{
+			githubAuth.POST("/events", githubEventHandlers.PostGithubEvents)
+		}
 	}
-	githubAuthMiddleware := middleware.NewGithubAuthMiddleware(secret)
-	githubAuth := r.Group("/github")
-	githubAuth.Use(githubAuthMiddleware.MiddlewareFunc())
-	{
-		githubAuth.POST("/events", githubEventHandlers.PostGithubEvents)
+	gitlabSecret := os.Getenv("DEVOPSTIC_GITLAB_WEBHOOK_SECRET")
+	if len(gitlabSecret) <= 0 {
+		log.Warn("missing gitlab webhook secret env var: DEVOPSTIC_GITLAB_WEBHOOK_SECRET")
+	} else {
+		gitlabAuthMiddleware := middleware.NewGitlabAuthMiddleware(gitlabSecret)
+		gitlabAuth := r.Group("/gitlab")
+		gitlabAuth.Use(gitlabAuthMiddleware.MiddlewareFunc())
+		{
+			gitlabAuth.POST("/events", gitlabEventHandlers.PostGitlabEvents)
+		}
 	}
+
+	// PagerDuty
+	pagerDutyAuth := r.Group("/pagerduty")
+	pagerDutyAuth.POST("/incidents", pagerDutyHandlers.PostPagerDutyIncidents)
 
 	return r
 }

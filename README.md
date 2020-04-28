@@ -70,7 +70,7 @@ A postgres database with a database and a user authorized to create tables.
 The api requires the following environment variables:
 - DEVOPSTIC_DATABASE_HOST: default: localhost
 - DEVOPSTIC_DATABASE_PORT: default: 5432
-- DEVOPSTIC_DATABASE_USER
+- DEVOPSTIC_DATABASE_USERNAME
 - DEVOPSTIC_DATABASE_PASSWORD
 - DEVOPSTIC_DATABASE_NAME: default: devopstic
 

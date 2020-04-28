@@ -1,18 +1,20 @@
 package middleware
 
 import (
-	"github.com/appleboy/gin-jwt"
-	"github.com/gin-gonic/gin"
-	"github.com/splisson/devopstic/entities"
-	"github.com/splisson/devopstic/representations"
 	"log"
 	"os"
 	"time"
+
+	jwt "github.com/appleboy/gin-jwt/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/splisson/devopstic/entities"
+	"github.com/splisson/devopstic/representations"
 )
 
 const IdentityKey = "id"
 
 func NewAuthMiddleware() *jwt.GinJWTMiddleware {
+	adminUsername := "admin"
 	authMiddleware := &jwt.GinJWTMiddleware{
 		Realm:      "opstic",
 		Key:        []byte("sa76duh387dfsihuasdf897ui398dfsuio"),
@@ -34,7 +36,7 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			username := loginValues.Username
 			password := loginValues.Password
 			// TODO: Use database?
-			adminUsername := "admin"
+
 			if os.Getenv("DEVOPSTIC_USERNAME") != "" {
 				adminUsername = os.Getenv("DEVOPSTIC_USERNAME")
 			}
@@ -53,7 +55,7 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			return nil, jwt.ErrFailedAuthentication
 		},
 		Authorizator: func(data interface{}, c *gin.Context) bool {
-			if v, ok := data.(string); ok && v == "admin" {
+			if v, ok := data.(string); ok && v == adminUsername {
 				return true
 			}
 
@@ -82,7 +84,6 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
 		TimeFunc:         time.Now,
 		SigningAlgorithm: "HS256",
-		IdentityKey:      IdentityKey,
 	}
 	authMiddleware, err := jwt.New(authMiddleware)
 	if err != nil {
