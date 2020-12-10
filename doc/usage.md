@@ -62,7 +62,7 @@ It return the event created.
 #### POST /events
 #### Header
 ```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI1MzkxMzYsImlkIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTU2MTAwMzEzNn0.FpPkK-5Tf-o_HAHjbf9FDc15w3Dq8jXPRco6ucR5vsk
+Authorization: Bearer <JWT obtained from POST /tokens api>
 ```
 #### Payload
 ```
