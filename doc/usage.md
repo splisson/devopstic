@@ -60,6 +60,10 @@ This api creates an event and the resources the event may require (commit, incid
 It return the event created.
 
 #### POST /events
+#### Header
+```
+Authorization: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI1MzkxMzYsImlkIjoiYWRtaW4iLCJvcmlnX2lhdCI6MTU2MTAwMzEzNn0.FpPkK-5Tf-o_HAHjbf9FDc15w3Dq8jXPRco6ucR5vsk
+```
 #### Payload
 ```
 {  
