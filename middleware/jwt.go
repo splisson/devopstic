@@ -11,22 +11,32 @@ import (
 	"github.com/splisson/devopstic/representations"
 )
 
-const IdentityKey = "id"
+const identityKey = "id"
 
 func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 	adminUsername := "admin"
 	authMiddleware := &jwt.GinJWTMiddleware{
-		Realm:      "opstic",
-		Key:        []byte("sa76duh387dfsihuasdf897ui398dfsuio"),
-		Timeout:    365 * 24 * time.Hour,
-		MaxRefresh: time.Hour,
+		Realm:       "opstic",
+		Key:         []byte("sa76duh387dfsihuasdf897ui398dfsuio"),
+		Timeout:     365 * 24 * time.Hour,
+		MaxRefresh:  time.Hour,
+		IdentityKey: identityKey,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*entities.User); ok {
+				// log.Printf("payload user %s", v.Username)
 				return jwt.MapClaims{
-					IdentityKey: v.Username,
+					identityKey: v.Username,
 				}
 			}
+
 			return jwt.MapClaims{}
+		},
+		IdentityHandler: func(c *gin.Context) interface{} {
+			claims := jwt.ExtractClaims(c)
+			// log.Printf("identity %s", claims[identityKey].(string))
+			return &entities.User{
+				Username: claims[identityKey].(string),
+			}
 		},
 		Authenticator: func(c *gin.Context) (interface{}, error) {
 			var loginValues representations.Login
@@ -36,6 +46,7 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			username := loginValues.Username
 			password := loginValues.Password
 			// TODO: Use database?
+			// log.Printf("authenticate %s %s", username, password)
 
 			if os.Getenv("DEVOPSTIC_USERNAME") != "" {
 				adminUsername = os.Getenv("DEVOPSTIC_USERNAME")
@@ -55,7 +66,8 @@ func NewAuthMiddleware() *jwt.GinJWTMiddleware {
 			return nil, jwt.ErrFailedAuthentication
 		},
 		Authorizator: func(data interface{}, c *gin.Context) bool {
-			if v, ok := data.(string); ok && v == adminUsername {
+			// log.Printf("authorize %s", data)
+			if v, ok := data.(*entities.User); ok && v.Username == adminUsername {
 				return true
 			}
 
